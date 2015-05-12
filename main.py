@@ -2,6 +2,11 @@ __author__ = 'Ibrahim'
 
 import imgurAPI
 
-idlist = imgurAPI.gallery_retrieval('hot', 'top', 'day')
-imgurAPI.comment_parse(idlist, False)
+client_id = '***REMOVED***'
+client_secret = '***REMOVED***'
+
+imgurInstance = imgurAPI.imgurAPI(client_id, client_secret)
+
+idlist = imgurInstance.gallery_retrieval('hot', 'top', 'day')
+imgurInstance.comment_parse(idlist, False)
 
