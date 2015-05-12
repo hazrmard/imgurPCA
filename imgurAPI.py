@@ -41,7 +41,7 @@ def filter_dict(worddict, fname='filter.txt'):
 
 def comment_parse(idlist, parsechildren=True, filterdict=None):
     """iterate over all comments and pass them on for processing"""
-    worddict = {}
+    worddict = {}                                               # contains frequency of words as word:freq pair
     # parse comments
     # open csv file here to store gallery comment vectors
     for itemid in idlist:
@@ -56,24 +56,23 @@ def comment_parse(idlist, parsechildren=True, filterdict=None):
     worddict = filter_dict(worddict)
     #arrange in order of frequency
     tempdict = {}
-    for key in worddict:
+    for key in worddict:                                        # reverse word:freq as freq:[word]
         if worddict[key] in tempdict:
             tempdict[worddict[key]].append(key)
         else:
             tempdict[worddict[key]] = [key]
-    templist = [key for key in tempdict]
-    templist.sort(reverse=True)
+    templist = [key for key in tempdict]                        # extract list of all freqs
+    templist.sort(reverse=True)                                 # arrange in descending order
     # write to csv
     f = open('word_dictionary.csv', 'wb')
     fr = csv.writer(f)
     worddict = {}
-    for element in templist:
+    for element in templist:                                    # write words in descending order to csv
         for item in tempdict[element]:
-            worddict[item] = element
+            #worddict[item] = element                           # order is not preserved in dicts
             fr.writerow([item.encode('utf8'), element])
     f.close()
-    return worddict
-
+    #return worddict                                            # no need to return anything
 
 
 
