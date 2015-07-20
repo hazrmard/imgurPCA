@@ -7,6 +7,6 @@ client_secret = '***REMOVED***'
 
 imgurInstance = imgurAPI.imgurAPI(client_id, client_secret)
 
-idlist = imgurInstance.gallery_retrieval('hot', 'top', 'day')
-imgurInstance.comment_parse(idlist, False)
+imgurInstance.gallery_retrieval('hot', 'top', 'day')
+imgurInstance.comment_parse()
 
