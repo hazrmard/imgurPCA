@@ -28,9 +28,9 @@ Some items will have words that others will not. For the sake of uniformity, mis
   
 The words can be **sorted** by count in descending order by calling the `sort()` function.
   
-The data can be **stored** to a csv file by calling the `store()` function that accepts an output file path as an argument. If the parsing was cumulative, then two rows (words; counts) are stored. Otherwise an array of values (word columns, per item ID count rows) is stored.  
+The data can be **stored** to a csv file by calling the `store()` function that accepts an output file path as an argument. If the parsing was cumulative, then two rows (words; counts) are stored. Otherwise an array of values (word columns, counts per item ID rows) is stored.  
   
-The API allows for a limited number of requests and assigns **credits** to each key. Available credits can be viewwd by calling the `credits()` function.
+The API allows for a limited number of requests and assigns **credits** to each key. Available credits can be viewed by calling the `credits()` function.
   
 Because of the way this code was written, successive functions can be chained for ease of use. For example:  
 ```
