@@ -7,3 +7,5 @@ Dependencies: [imgurpython](https://github.com/Imgur/imgurpython)
 2. Filters out common words to create word vectors describing each post. 
 3. *The vectors are then subjected to Principle Component Analysis to reduce data size and to make clustering easier.*
 4. *New posts are parsed and transformed into the learned vector space and classified*
+  
+*The list of common words is taken from [here](http://www.wordfrequency.info/free.asp)

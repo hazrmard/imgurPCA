@@ -8,6 +8,7 @@ __author__ = 'Ibrahim'
 from imgurpython import ImgurClient
 import csv
 import collections
+import time
 
 
 class imgurAPI:
@@ -17,13 +18,16 @@ class imgurAPI:
         self.clientSecret = cs
         self.client = ImgurClient(self.clientID, self.clientSecret)
         self.idlist = []
-        self.worddict = {}
+        self.worddict = collections.OrderedDict()
         self.isbatch = True
         self.cumulative = True
 
     # use function gallery_item_comments to get comments by item id
 
-    def get(self, args):
+    def get(self, args=None):
+        """obtain IDs of items to process"""
+        if args is None:
+            args = {'section': 'hot', 'sort': 'top', 'window': 'week', 'pages': 1}
         f = open('gallery_ids.txt', 'w')
         if type(args) == dict:
             for page in range(0, args['pages']):
@@ -37,49 +41,58 @@ class imgurAPI:
             self.isbatch = False
             self.idlist = [args]
         f.close()                           # file has new line at the end
+        print str(len(self.idlist)) + " items loaded."
         return self
 
-    def gallery_retrieval(self, section='hot', sort='top', window='week', pages=1):  # TODO: deprecate in favor of get()
-        """retrieve ids of gallery items and output them to a file"""
-        f = open('gallery_ids.txt', 'w')
-        for page in range(0, pages):
-            gallery = self.client.gallery(section, sort, page, window)
-            for item in gallery:
-                self.idlist.append(item.id.encode('utf-8'))
-                print >>f, item.id.encode('utf-8')
-        f.close()                           # file has new line at the end
-        return self
-
-    def filter(self, fname='filter.txt'):           # TODO: import filter list from csv + add option to specify count
+    def filter(self, fname='filter.csv', num=None):           # TODO: import filter list from csv + add option to specify count
         """read list of words to filter out from analysis"""
-        f = open(str(fname), 'r')
-        filterlist = f.readlines()
-        filterlist = [x.rstrip() for x in filterlist]
+        f = open(str(fname), 'rb')
+        r = csv.reader(f)
+        filterlist = []
+        if num is None:         # read entire file
+            for row in r:
+                filterlist.append(row)
+        else:                   # read only some lines
+            for i in range(num):
+                filterlist.append(next(r))
+        filterlist = [x[0].rstrip() for x in filterlist]
         f.close()
         if self.cumulative:
-            self.worddict = {key: self.worddict[key] for key in self.worddict if key not in filterlist}
+            self.worddict = collections.OrderedDict({key: self.worddict[key] for key in self.worddict if key not in filterlist})
         else:
             for itemkey in self.worddict:
-                self.worddict[itemkey] = {key: self.worddict[itemkey][key] for key in self.worddict[itemkey] if key not in filterlist}
+                self.worddict[itemkey] = collections.OrderedDict({key: self.worddict[itemkey][key] for key in self.worddict[itemkey] if key not in filterlist})
+        print "Filter complete."
         return self
 
     def parse(self, parsechildren=True, cumulative=True):
         """iterate over all comments and pass them on for processing"""
+        i = 0.0             # counter
         self.cumulative = cumulative
         storage = self.worddict                                     # contains frequency of words as word:freq pair
         for itemid in self.idlist:
             try:
-                if self.cumulative:
+                if not self.cumulative:
+                    self.worddict[itemid] = collections.OrderedDict()
                     storage = self.worddict[itemid]                 # create word dict for each item
                 gallerycoments = self.client.gallery_item_comments(itemid)  # extract comments
                 for comment in gallerycoments:
                     self.comment_extract(storage, comment, parsechildren)   # populate dictionary
+                i += 1
+                print "\rParsing " + "{0:.3g}% complete.".format(i*100/len(self.idlist)),
             except:
                 print 'Error with item # ' + itemid                 # Getting a JSON response error with some items
-        # worddict = self.filter()                                    # apply filter
+        print
         return self
 
-    def store(self, filename='word_dictionary.csv'):                # TODO: introdoce sort() and ordered dicts
+    def sort(self):
+        if self.cumulative:
+            self.worddict = collections.OrderedDict(sorted(self.worddict.items()), key=lambda t: t[1])
+        else:
+            for itemid in self.worddict:
+                self.worddict[itemid] = collections.OrderedDict(sorted(self.worddict[itemid].items()), key=lambda t: t[1])
+
+    def store(self, filename='word_dictionary.csv'):                # TODO: implement for cumulative=False
         tempdict = {}                                               # arrange in order of frequency
         if self.cumulative:
             for key in self.worddict:                                        # reverse word:freq as freq:[word]
@@ -95,6 +108,14 @@ class imgurAPI:
                 for item in tempdict[element]:
                     fr.writerow([item, element])
             f.close()
+            print "Stored in " + filename + "."
+
+    def credits(self):
+        print "\nCredits:"
+        print str(self.client.credits['UserRemaining']) + " remaining (IP based) out of " + str(self.client.credits['UserLimit'])
+        print str(self.client.credits['ClientRemaining']) + " remaining (API key based) out of " + str(self.client.credits['ClientLimit'])
+        print 'Credits Reset on: ' + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.client.credits['UserReset']))
+        return self
 
     def comment_extract(self, storage, comment, parsechildren):
         """recursively parse comments and split them to form a dictionary"""

@@ -7,6 +7,5 @@ client_secret = '***REMOVED***'
 
 imgurInstance = imgurAPI.imgurAPI(client_id, client_secret)
 
-imgurInstance.gallery_retrieval('hot', 'top', 'day')
-imgurInstance.parse()
+imgurInstance.get().parse(parsechildren=False).filter(num=1000).store().credits()
 
