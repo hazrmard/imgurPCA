@@ -109,6 +109,7 @@ class imgurAPI:
                     fr.writerow([item, element])
             f.close()
             print "Stored in " + filename + "."
+        return self
 
     def credits(self):
         print "\nCredits:"
