@@ -24,7 +24,7 @@ After that, you can **filter** the parsed data to remove any words of your choos
   
 In many cases the number of words parsed will be very large. It can be **truncated** by calling the `truncate()` function and specifying what number of the mose frequent words to keep. The list of most frequent words is made by tallying the entire dataset, not just a single item.
   
-Some items will have words that others will not. For the sake of uniformity, missing words can be **consolidated**. The `consolodate()` function adds all words present in the cumulative tally but not in individual items to their dictionaries (with 0 counts).  
+Some items will have words that others will not. For the sake of uniformity, missing words can be **consolidated**. The `consolidate()` function adds all words present in the cumulative tally but not in individual items to their dictionaries (with 0 counts).  
   
 The words can be **sorted** by count in descending order by calling the `sort()` function.
   
