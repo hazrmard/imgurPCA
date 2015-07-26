@@ -37,4 +37,4 @@ Because of the way this code was written, successive functions can be chained fo
 imgurInstance.get().parse(parsechildren=False, cumulative=False)
               .filter(num=1000).truncate(1000).sort().store().credits()
 ```  
-Will **get** the default set of IDs, **parse** top level comments separately, **filter** out the top 100 words found in the default filter file, **truncate** all but the 1000 most frequent words from the dataset, **sort** them in order of cumulative frequency, then **store** them in the default output filepath, and at last show available **credits**.
+Will **get** the default set of IDs, **parse** top level comments separately, **filter** out the top 1000 words found in the default filter file, **truncate** all but the 1000 most frequent words from the dataset, **sort** them in order of cumulative frequency, then **store** them in the default output filepath, and at last show available **credits**.
