@@ -11,7 +11,7 @@ import collections
 import time
 
 
-class imgurAPI:
+class imgurparse:
 
     def __init__(self, cid, cs):
         self.clientID = cid
@@ -134,6 +134,8 @@ class imgurAPI:
         return self
 
     def truncate(self, num=None):
+        """shorten list of words"""
+        print "Consolidating before truncation."
         self.consolidate()
         if num is not None:
             keys = self.tally.keys()[:num]      # truncate key list
