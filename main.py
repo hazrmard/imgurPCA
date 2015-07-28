@@ -1,11 +1,11 @@
 __author__ = 'Ibrahim'
 
-from imgurparse import imgurparse
+from imgurparse import ImgurParse
 
 client_id = '***REMOVED***'
 client_secret = '***REMOVED***'
 
-imgurInstance = imgurparse(client_id, client_secret)
+imgurInstance = ImgurParse(client_id, client_secret)
 
-imgurInstance.get().parse(parsechildren=False, cumulative=False).filter(num=1000).truncate(1000).sort().store().credits()
+imgurInstance.get().parse(parsechildren=False, cumulative=False).filter(num=1000).sort().truncate(1000, cumulative=False).consolidate().store().credits()
 

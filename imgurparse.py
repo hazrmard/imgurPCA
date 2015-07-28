@@ -11,7 +11,7 @@ import collections
 import time
 
 
-class imgurparse:
+class ImgurParse:
 
     def __init__(self, cid, cs):
         self.clientID = cid
@@ -71,14 +71,17 @@ class imgurparse:
             print
         return self
 
-    def parse(self, parsechildren=True, cumulative=True):
+    def parse(self, parsechildren=True, cumulative=None):
         """iterate over all comments and pass them on for processing"""
         i = 0.0             # counter
-        self.cumulative = cumulative
+        if cumulative is None:
+            cumulative = self.cumulative
+        else:
+            self.cumulative = cumulative
         storage = self.worddict                                     # contains frequency of words as word:freq pair
         for itemid in self.idlist:
             try:
-                if not self.cumulative:
+                if not cumulative:
                     self.worddict[itemid] = collections.OrderedDict()
                     storage = self.worddict[itemid]                 # create word dict for each item
                 gallerycoments = self.client.gallery_item_comments(itemid)  # extract comments
@@ -133,19 +136,60 @@ class imgurparse:
         print "Stored in " + filename + "."
         return self
 
-    def truncate(self, num=None):
-        """shorten list of words"""
-        print "Consolidating before truncation."
-        self.consolidate()
-        if num is not None:
-            keys = self.tally.keys()[:num]      # truncate key list
-            self.tally = collections.OrderedDict({key:self.tally[key] for key in keys})     # update tally
-        if self.cumulative:
-            self.worddict = collections.OrderedDict({key: self.worddict[key] for key in self.tally})
+    def load(self, source, mode='overwrite', cumulative=None):              # TODO: implement load function to accept csv files or dicts
+        """loads from csv if source is string, or from dict otherwise"""
+        if cumulative is None:
+            cumulative = self.cumulative
         else:
+            self.cumulative = cumulative
+        if type(source) == basestring:
+            f = open(source, 'rb')
+            r = csv.reader(f)
+            if cumulative:
+                header = r.next()
+        return self
+
+    def omit(self, arg):                                    # TODO: omit by specifying frequency ranges
+        """remove keys by specifying frequency range"""
+        pass
+
+    def truncate(self, num, cumulative=None):
+        """shorten list of words by frequency rank"""
+        if cumulative is None:
+            cumulative = self.cumulative
+        if cumulative and self.cumulative:
+            if num > 0:
+                keys = self.tally.keys()[:num]      # truncate key list (bottom or top)
+            else:
+                keys = self.tally.keys()[len(self.tally.keys() + num):]
+            self.worddict = collections.OrderedDict({key: self.worddict[key] for key in self.tally})
+            self.tally = collections.OrderedDict({key: self.tally[key] for key in keys})     # update tally
+        elif cumulative and not self.cumulative:
+            if num > 0:
+                keys = self.tally.keys()[:num]      # truncate key list (bottom or top)
+            else:
+                keys = self.tally.keys()[len(self.tally.keys() + num):]
+            self.tally = collections.OrderedDict({key: self.tally[key] for key in keys})     # update tally
             for itemid in self.worddict:
-                self.worddict[itemid] = collections.OrderedDict({key: self.worddict[itemid][key] for key in self.tally})
-        print "Truncated to top " + str(num) + " words."
+                keyset = set(self.worddict[itemid].keys())
+                keyset = keyset - set(keys)     # get set of keys in the keyset but not in the tally
+                for key in keyset:
+                    del self.worddict[itemid][key]
+        elif not cumulative and not self.cumulative:
+            keyset = set()          # store words still existing in dicts
+            for itemid in self.worddict:
+                if num > 0:
+                    keys = self.worddict[itemid].keys()[:num]      # truncate key list
+                else:
+                    keys = self.worddict[itemid].keys()[len(self.worddict[itemid].keys()) + num:]
+                keyset.update(keys)
+                self.worddict[itemid] = collections.OrderedDict({key: self.worddict[itemid][key] for key in keys})
+            removekeys = set(self.tally.keys()) - keyset        # keys that no longer exist
+            for key in removekeys:
+                del self.tally[key]
+        else:
+            raise ValueError('Cannot truncate individually on cumulatively parsed data.')
+        print "Truncation complete."
         return self
 
     def credits(self):
