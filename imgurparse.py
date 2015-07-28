@@ -25,7 +25,7 @@ class ImgurParse:
 
     # use function gallery_item_comments to get comments by item id
 
-    def get(self, args=None):
+    def get(self, args=None):                           # TODO: (low priority) add except() function
         """obtain IDs of items to process"""
         if args is None:
             args = {'section': 'hot', 'sort': 'top', 'window': 'week', 'pages': 1}
@@ -62,7 +62,7 @@ class ImgurParse:
             self.worddict = collections.OrderedDict({key: self.worddict[key] for key in self.worddict if key not in filterlist})
             print "Filter complete."
         else:
-            i = 0
+            i = 0.0
             for itemkey in self.worddict:
                 self.worddict[itemkey] = collections.OrderedDict({key: self.worddict[itemkey][key] for key in self.worddict[itemkey] if key not in filterlist})
                 i += 1
@@ -98,7 +98,7 @@ class ImgurParse:
         """make dictionary keys uniform"""
         if not self.cumulative:     # cumulative data needs no consolidation
             self.tally = collections.OrderedDict(sorted(self.tally.items(), key=lambda t: t[1], reverse=True))  # find most freq words in entire dataset
-            i = 0       # counter
+            i = 0.0       # counter
             datalength = len(self.idlist)
             tallykeys = set(self.tally.keys())                  # set of all words in all items
             for itemid in self.idlist:
@@ -115,10 +115,14 @@ class ImgurParse:
         self.tally = collections.OrderedDict(sorted(self.tally.items(), key=lambda t: t[1], reverse=True))
         if self.cumulative:
             self.worddict = collections.OrderedDict(sorted(self.worddict.items(), key=lambda t: t[1], reverse=True))
+            print "Sorting 100% complete."
         else:
+            i = 0.0
             for itemid in self.worddict:
                 self.worddict[itemid] = collections.OrderedDict(sorted(self.worddict[itemid].items(), key=lambda t: t[1], reverse=True))
-        print "Sorting complete."
+                i += 1
+                print "\rSorting " + "{0:.3g}% complete.".format(i*100/len(self.idlist)),
+            print
         return self
 
     def store(self, filename='word_dictionary.csv'):
@@ -136,12 +140,14 @@ class ImgurParse:
         print "Stored in " + filename + "."
         return self
 
-    def load(self, source, mode='overwrite', cumulative=None):              # TODO: implement load function to accept csv files or dicts
+    def load(self, source, cumulative=None):              # TODO: implement load function to accept csv files or dicts
         """loads from csv if source is string, or from dict otherwise"""
         if cumulative is None:
             cumulative = self.cumulative
-        else:
+        elif not self.worddict:
             self.cumulative = cumulative
+        elif cumulative != self.cumulative:
+            raise ValueError("Cumulative and non-cumulative sources cannot be matched.")
         if type(source) == basestring:
             f = open(source, 'rb')
             r = csv.reader(f)
@@ -164,7 +170,9 @@ class ImgurParse:
                 keys = self.tally.keys()[len(self.tally.keys() + num):]
             self.worddict = collections.OrderedDict({key: self.worddict[key] for key in self.tally})
             self.tally = collections.OrderedDict({key: self.tally[key] for key in keys})     # update tally
+            print "Truncation complete."
         elif cumulative and not self.cumulative:
+            i = 0.0
             if num > 0:
                 keys = self.tally.keys()[:num]      # truncate key list (bottom or top)
             else:
@@ -175,8 +183,12 @@ class ImgurParse:
                 keyset = keyset - set(keys)     # get set of keys in the keyset but not in the tally
                 for key in keyset:
                     del self.worddict[itemid][key]
+                i += 1
+                print "\rTruncating " + "{0:.3g}% complete.".format(i*100/len(self.idlist)),
+            print
         elif not cumulative and not self.cumulative:
             keyset = set()          # store words still existing in dicts
+            i = 0.0
             for itemid in self.worddict:
                 if num > 0:
                     keys = self.worddict[itemid].keys()[:num]      # truncate key list
@@ -184,12 +196,14 @@ class ImgurParse:
                     keys = self.worddict[itemid].keys()[len(self.worddict[itemid].keys()) + num:]
                 keyset.update(keys)
                 self.worddict[itemid] = collections.OrderedDict({key: self.worddict[itemid][key] for key in keys})
+                i += 1
+                print "\rTruncating " + "{0:.3g}% complete.".format(i*100/len(self.idlist)),
+            print
             removekeys = set(self.tally.keys()) - keyset        # keys that no longer exist
             for key in removekeys:
                 del self.tally[key]
         else:
             raise ValueError('Cannot truncate individually on cumulatively parsed data.')
-        print "Truncation complete."
         return self
 
     def credits(self):
