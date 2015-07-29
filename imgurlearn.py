@@ -5,5 +5,4 @@ from numpy.linalg import eig
 
 
 class ImgurLearn:
-    def __init__(self):
-        self.idlist = None
+    pass

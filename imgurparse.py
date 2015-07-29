@@ -19,8 +19,8 @@ class ImgurParse:
         self.client = ImgurClient(self.clientID, self.clientSecret)
         self.idlist = []
         self.worddict = collections.OrderedDict()
-        self.isbatch = True
-        self.cumulative = True
+        self.isbatch = False
+        self.cumulative = False
         self.tally = collections.OrderedDict()
 
     # use function gallery_item_comments to get comments by item id
@@ -29,19 +29,17 @@ class ImgurParse:
         """obtain IDs of items to process"""
         if args is None:
             args = {'section': 'hot', 'sort': 'top', 'window': 'week', 'pages': 1}
-        f = open('gallery_ids.txt', 'w')
         if type(args) == dict:
             for page in range(0, args['pages']):
                 gallery = self.client.gallery(args['section'], args['sort'], page, args['window'])
                 for item in gallery:
                     self.idlist.append(item.id.encode('utf-8'))
-                    print >>f, item.id.encode('utf-8')
         elif type(args) == list:            # handle list of gallery IDs
             self.idlist = args
+            self.isbatch = True
         elif type(args) == basestring:      # handle single ID
-            self.isbatch = False
+            self.isbatch = True
             self.idlist = [args]
-        f.close()                           # file has new line at the end
         print str(len(self.idlist)) + " items loaded."
         return self
 
@@ -78,6 +76,7 @@ class ImgurParse:
             cumulative = self.cumulative
         else:
             self.cumulative = cumulative
+            self.isbatch = cumulative
         storage = self.worddict                                     # contains frequency of words as word:freq pair
         for itemid in self.idlist:
             try:
@@ -86,7 +85,7 @@ class ImgurParse:
                     storage = self.worddict[itemid]                 # create word dict for each item
                 gallerycoments = self.client.gallery_item_comments(itemid)  # extract comments
                 for comment in gallerycoments:
-                    self.comment_extract(storage, comment, parsechildren)   # populate dictionary
+                    self._comment_extract(storage, comment, parsechildren)   # populate dictionary
                 i += 1
                 print "\rParsing " + "{0:.3g}% complete.".format(i*100/len(self.idlist)),
             except:
@@ -130,8 +129,9 @@ class ImgurParse:
         f = open(filename, 'wb')                                    # write to csv
         fr = csv.writer(f)
         if self.cumulative:
-            fr.writerow(self.worddict.keys())
-            fr.writerow([self.worddict[key] for key in self.worddict])
+            fr.writerow(self.worddict.keys())                               # write keys,
+            fr.writerow([self.worddict[key] for key in self.worddict])      # and values,
+            fr.writerow(self.idlist)                                        # and IDs
         else:
             fr.writerow(['Item ID'] + self.tally.keys())
             for itemid in self.worddict:
@@ -140,19 +140,38 @@ class ImgurParse:
         print "Stored in " + filename + "."
         return self
 
-    def load(self, source, cumulative=None):              # TODO: implement load function to accept csv files or dicts
+    def load(self, source, cumulative=None):     # TODO: implement load function to accept csv files or other instances
         """loads from csv if source is string, or from dict otherwise"""
-        if cumulative is None:
+        if cumulative is None and self.worddict:    # cumulative not specified, instance contains data
             cumulative = self.cumulative
-        elif not self.worddict:
+        elif cumulative is not None and not self.worddict:  # cumulative specified, instance does not contain data
             self.cumulative = cumulative
-        elif cumulative != self.cumulative:
+            self.isbatch = self.cumulative
+        elif cumulative != self.cumulative and self.worddict:   # cumulative spec not same, and data already exists
             raise ValueError("Cumulative and non-cumulative sources cannot be matched.")
         if type(source) == basestring:
-            f = open(source, 'rb')
-            r = csv.reader(f)
             if cumulative:
-                header = r.next()
+                self._read_cumulative(source)
+            else:
+                self._read_noncumulative(source)
+        elif isinstance(source, ImgurParse):
+            if set(self.idlist).isdisjoint(set(source.idlist)):         # only combine if IDs are mutually exclusive
+                self.idlist.append(source.idlist)
+                if cumulative:                                          # add wordcounts
+                    mykeys = set(self.worddict.keys())
+                    sourcekeys = set(source.worddict.keys())
+                    ourkeys = mykeys & sourcekeys
+                    onlysourcekeys = sourcekeys - mykeys
+                    for key in ourkeys:
+                        self.worddict[key] += source.worddict[key]
+                    for key in onlysourcekeys:
+                        self.worddict[key] = source.worddict[key]
+                else:                                                   # append source data to self.worddict
+                    for itemid in source.idlist:
+                        self.worddict[itemid] = source.worddict[itemid]
+            else:
+                raise ValueError('The lists of IDs are not disjoint.')
+
         return self
 
     def omit(self, arg):                                    # TODO: omit by specifying frequency ranges
@@ -171,7 +190,7 @@ class ImgurParse:
             self.worddict = collections.OrderedDict({key: self.worddict[key] for key in self.tally})
             self.tally = collections.OrderedDict({key: self.tally[key] for key in keys})     # update tally
             print "Truncation complete."
-        elif cumulative and not self.cumulative:
+        elif cumulative and not self.cumulative:    # truncate individual records on cumulative basis
             i = 0.0
             if num > 0:
                 keys = self.tally.keys()[:num]      # truncate key list (bottom or top)
@@ -186,7 +205,7 @@ class ImgurParse:
                 i += 1
                 print "\rTruncating " + "{0:.3g}% complete.".format(i*100/len(self.idlist)),
             print
-        elif not cumulative and not self.cumulative:
+        elif not cumulative and not self.cumulative:    # truncate individual records on individual basis
             keyset = set()          # store words still existing in dicts
             i = 0.0
             for itemid in self.worddict:
@@ -214,7 +233,7 @@ class ImgurParse:
         print 'Credits Reset on: ' + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.client.credits['UserReset']))
         return self
 
-    def comment_extract(self, storage, comment, parsechildren):
+    def _comment_extract(self, storage, comment, parsechildren):
         """recursively parse comments and split them to form a dictionary"""
         dellist = [x for x in '''!@#$%^&*()-`~_=+{[}]:;,<.>/?\|'")0123456789''']
         if not comment.children or not parsechildren:
@@ -237,4 +256,31 @@ class ImgurParse:
                     continue
         else:
             for subcomment in comment.children:
-                self.comment_extract(storage, subcomment, parsechildren)
+                self._comment_extract(storage, subcomment, parsechildren)
+
+    def _read_cumulative(self, source):
+        """add cumulatively stored keys/counts to class instance from csv file"""
+        f = open(source)
+        r = csv.reader(source)
+        keylist = r.next()                              # first row is list of keys
+        sourcekeys = set(keylist)
+        if sourcekeys.isdisjoint(set(self.idlist)):
+            valuelist = r.next()                        # second row is list of values
+            worddict = {}
+            for i in range(len(keylist)):
+                worddict[keylist[i]] = valuelist[i]
+            self.idlist.append(r.next())                # third row is list of IDs
+            mykeys = set(self.worddict.keys())
+            ourkeys = mykeys & sourcekeys
+            for key in ourkeys:
+                self.worddict[key] += worddict[key]
+            onlysourcekeys = sourcekeys - mykeys
+            for key in onlysourcekeys:
+                self.worddict[key] = worddict[key]
+        else:
+            raise ValueError('The lists of IDs are not disjoint.')
+        f.close()
+
+    def _read_noncumulative(self, source):                  # TODO: finish noncumulative read function
+        """add individually stored keys/counts to class instance from csv file"""
+        pass
