@@ -7,5 +7,5 @@ client_secret = '***REMOVED***'
 
 imgurInstance = ImgurParse(client_id, client_secret)
 
-imgurInstance.get().parse(parsechildren=False, cumulative=False).filter(num=1000).sort().truncate(1000, cumulative=False).consolidate().store().credits()
+imgurInstance.get().parse(parsechildren=False, cumulative=False).filter(num=1000).sort().truncate(1000, cumulative=True).consolidate().store().credits()
 
