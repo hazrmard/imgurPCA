@@ -11,10 +11,10 @@ Dependencies: [imgurpython](https://github.com/Imgur/imgurpython)
 *The list of common words is taken from [here](http://www.wordfrequency.info/free.asp)*  
   
 ## Getting Started  
-The imgurAPI class needs authorization to be able to access data on imgur. For that, you need [to get keys from imgur.com](https://api.imgur.com). You will be provided with a *client secret* and a *client id*. Use these to instantiate the imgurAPI class:  
+The ImgurParse class needs authorization to be able to access data on imgur. For that, you need [to get keys from imgur.com](https://api.imgur.com). You will be provided with a *client secret* and a *client id*. Use these to instantiate the imgurAPI class:  
 ```
-import imgurAPI
-imgurInstance = imgurAPI.imgurAPI(id, secret)
+import imgurparse
+imgurInstance = imgurparse.ImgurParse(id, secret)
 ```  
 After instantiation, you need to **get** items from imgur to parse. You can use the `get()` function for that. It accepts single strings, list of IDs, or a dictionary of [gallery specifications to extract content from](https://github.com/Imgur/imgurpython/blob/master/README.md). The list of IDs is stored in the `idlist` instance attribute.  
   
@@ -22,7 +22,7 @@ Now that the class instance has IDs of items to **parse**, you can begin parsing
   
 After that, you can **filter** the parsed data to remove any words of your choosing. The `filter()` function takes a *.csv* file path as an argument, and the number of words to read from it.  
   
-In many cases the number of words parsed will be very large. It can be **truncated** by calling the `truncate()` function and specifying what number of the most frequent words to keep. The list of most frequent words is made by tallying the entire dataset, not just a single item.
+In many cases the number of words parsed will be very large. It can be **truncated** by calling the `truncate()` function and specifying what number of the most frequent words to keep. The frequency used can be for the cumulative dataset or for individual items, by setting the `cumulative` argument.
   
 Some items will have words that others will not. For the sake of uniformity, missing words can be **consolidated**. The `consolidate()` function adds all words present in the cumulative tally but not in individual items to their dictionaries (with 0 counts).  
   
