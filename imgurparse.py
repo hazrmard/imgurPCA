@@ -13,10 +13,11 @@ import time
 
 class ImgurParse:
 
-    def __init__(self, cid, cs):
+    def __init__(self, cid=None, cs=None):
         self.clientID = cid
         self.clientSecret = cs
-        self.client = ImgurClient(self.clientID, self.clientSecret)
+        if cid and cs:
+            self.client = ImgurClient(self.clientID, self.clientSecret)
         self.idlist = []
         self.worddict = collections.OrderedDict()
         self.exceptflag = False
@@ -159,11 +160,12 @@ class ImgurParse:
             self.cumulative = cumulative
         elif cumulative != self.cumulative and self.worddict:   # cumulative spec not same, and data already exists
             raise ValueError("Cumulative and non-cumulative sources cannot be matched.")
-        if type(source) == basestring:
+        if type(source) == str:
             if cumulative:
                 self._read_cumulative(source)
             else:
                 self._read_noncumulative(source)
+                print 'non cumulative'
         elif isinstance(source, ImgurParse):
             if (not self.cumulative and set(self.idlist).isdisjoint(set(source.idlist) - self.exceptions)) or (self.cumulative and set(self.idlist).isdisjoint(set(source.idlist))):       # only combine if IDs are mutually exclusive
                 self.idlist.append(source.idlist)
@@ -249,6 +251,19 @@ class ImgurParse:
         print 'Credits Reset on: ' + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.client.credits['UserReset']))
         return self
 
+    def normalize(self):
+        if self.cumulative:
+            totalcount = float(sum(self.worddict.values()))
+            for key in self.worddict.keys():
+                self.worddict[key] /= totalcount
+        else:
+            for itemid in self.worddict.keys():
+                totalcount = float(sum(self.worddict[itemid].values()))
+                for word in self.worddict[itemid].keys():
+                    self.worddict[itemid][word] /= totalcount
+        print "Normalized"
+        return self
+
     def _comment_extract(self, storage, comment, parsechildren):
         """recursively parse comments and split them to form a dictionary"""
         dellist = [x for x in '''!@#$%^&*()-`~_=+{[}]:;,<.>/?\|'")0123456789''']
@@ -257,19 +272,7 @@ class ImgurParse:
             for c in dellist:               # replacing unwanted characters from comment
                 cmt = cmt.replace(c, '')
             cmt = cmt.split()               # splitting comment into words
-            for word in cmt:
-                try:                        # only processing ascii character words
-                    w = str(word)
-                    if w in storage:
-                        storage[w] += 1
-                    else:
-                        storage[w] = 1
-                    if w in self.tally:     # to keep a cumulative tally of words for truncation and storing purposes
-                        self.tally[w] += 1
-                    else:
-                        self.tally[w] = 1
-                except:
-                    continue
+            self._tally(storage, cmt)
         else:
             for subcomment in comment.children:
                 self._comment_extract(storage, subcomment, parsechildren)
@@ -280,6 +283,7 @@ class ImgurParse:
         r = csv.reader(source)
         sourcekeys = r.next()
         sourcevals = r.next()
+        sourcevals = [int(x) for x in sourcevals]
         sourcedict = {sourcekeys[i]: sourcevals[i] for i in range(len(sourcekeys))}
         sourceids = set(r.next()) - self.exceptions
         if set(self.idlist).isdisjoint(sourceids):
@@ -301,7 +305,48 @@ class ImgurParse:
             if row['ItemId'] in self.idlist:
                 raise ValueError('Target and self IDs are not disjoint.')
             elif row['ItemId'] not in self.exceptions:
+                itemid = row['ItemId']
+                self.idlist.append(itemid)
                 del row['ItemId']
-                self.worddict[row['ItemId']] = row
+                row = collections.OrderedDict(self._dict2int(row))
+                self.worddict[itemid] = row
+                self._tally(self.worddict, row)
         f.close()
         pass
+
+    def _dict2int(self, d):
+        """convert dictionary values into integers from strings"""
+        for key in d:
+            d[key] = int(d[key])
+        return d
+
+    def _tally(self, storage, wordlist):
+        """take either a dictionary or a list of words and add them to tally"""
+        try:
+            for word in wordlist.keys():
+                try:                        # only processing ascii character words
+                    w = str(word)
+                    if w in storage:
+                        storage[w] += wordlist[word]
+                    else:
+                        storage[w] = wordlist[word]
+                    if w in self.tally:     # to keep a cumulative tally of words for truncation and storing purposes
+                        self.tally[w] += wordlist[word]
+                    else:
+                        self.tally[w] = wordlist[word]
+                except:
+                    continue
+        except:
+            for word in wordlist:
+                    try:                        # only processing ascii character words
+                        w = str(word)
+                        if w in storage:
+                            storage[w] += 1
+                        else:
+                            storage[w] = 1
+                        if w in self.tally:     # to keep a cumulative tally of words for truncation and storing purposes
+                            self.tally[w] += 1
+                        else:
+                            self.tally[w] = 1
+                    except:
+                        continue
