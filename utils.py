@@ -1,15 +1,13 @@
+from __future__ import unicode_literals
 
-
-def flatten(container, lvl=1):     # http://stackoverflow.com/a/10824420/4591810
+def flatten(container, lvl=1):
     """convert arbitrarily nested arrays of comments into a flat array
     """
     for i in container:
-        if isinstance(i.children, (list,tuple)):
-            lvl += 1
-            for j in flatten(i.children, lvl):
-                yield (j, lvl)
-        else:
-            yield (i, lvl)
+        yield (i, lvl)              # yield current comment
+        if isinstance(i.children, (list,tuple)) and i.children:
+            for j in flatten(i.children, lvl+1):
+                yield j             # yield flattened out children
 
 
 def sanitize(sentence):
