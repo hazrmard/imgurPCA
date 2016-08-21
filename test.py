@@ -1,6 +1,7 @@
 from __future__ import print_function
 from post import Post
 import config
+from imgurpython.helpers.error import ImgurClientError
 
 print('\n')
 
@@ -29,7 +30,11 @@ def test_instance():
 def test_download():
     p = Post('MScn5', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
     p.download()
-
+    try:
+        p = Post('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
+        p.download()
+    except ImgurClientError:
+        pass
 
 if __name__=='__main__':
     test_instance('Testing Post class instantiation:')
