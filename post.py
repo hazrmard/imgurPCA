@@ -49,6 +49,9 @@ class Post(object):
 
     def generate_word_counts(self, child_comments=False, comment_votes=True,
                             comment_level=True):
+        """generate a numpy array of words and their weights as determined by
+        self.word_weight function.
+        """
         words = {}
         if child_comments:
             iterable = utils.flatten(self.comments)

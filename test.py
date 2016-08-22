@@ -1,5 +1,6 @@
 from __future__ import print_function
 from post import Post
+from user import User
 import utils
 import config
 from imgurpython.helpers.error import ImgurClientError
@@ -20,7 +21,7 @@ def test(fn):
 
 
 @test
-def test_instance():
+def test_post_instance():
     """check if instantiation of Post works with accentable arguments"""
     p = Post(123, comments=['123', 'abc'], cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
     p = Post(123, comments=['123', 'abc'], cs='123fasfa', cid='asdeerwwe33')
@@ -30,7 +31,7 @@ def test_instance():
         pass
 
 @test
-def test_download():
+def test_post_download():
     """check if all post/comment/user data can be downloaded"""
     p = Post('MScn5', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
     p.download()
@@ -71,11 +72,38 @@ def test_word_counts():
                             comment_level=False)
     p.generate_word_counts(child_comments=True, comment_votes=True,
                             comment_level=True)
+    u = User('test', cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
+    u.download()
+    u.generate_word_counts()
+
+@test
+def test_user_instance():
+    u = User('blah', cid='asdadasd', cs='123123qd')
+    try:
+        u = User(123)
+    except config.InvalidArgument:
+        pass
+
+
+@test
+def test_user_download():
+    u = User('test', cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
+    u.download()
+    try:
+        u = User('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
+        u.download()
+    except ImgurClientError:
+        pass
 
 if __name__=='__main__':
-    test_instance('Testing Post class instantiation:')
-    test_download('Testing post data download:')
-    test_sentence_sanitation('Testing sentence decomposition:')
+    test_post_instance('Testing Post class instantiation:')     # Post class only
+    test_post_download('Testing post data download:')
+
+
+    test_user_instance('Testing User class instantiation:')     # User class only
+    test_user_download('Testing user data download:')
+
+    test_sentence_sanitation('Testing sentence decomposition:') # shared funcs
     test_structure_flattening('Testing flattening nested comments:')
     test_word_counts('Testing word count generation:')
 
