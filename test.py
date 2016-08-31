@@ -1,10 +1,12 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 from post import Post
 from user import User
 import utils
 import config
 from imgurpython.helpers.error import ImgurClientError
 import pickle
+import numpy as np
 
 print('\n')
 
@@ -77,6 +79,33 @@ def test_word_counts():
     u.generate_word_counts()
 
 @test
+def test_weight_filters():
+    arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
+    brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
+    arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
+    arr2 = np.array([('a',1),('b',2)],dtype=config.DT_WORD_WEIGHT)
+    p = Post('asd', wordcount=arr, cs='123',cid='asd')
+    p.filter_by_weight(3,5)
+    q = Post('def',wordcount=brr, cs='123',cid='asd')
+    q.filter_by_weight(3,5,True)
+    if not (np.array_equal(p.wordcount,arr1) and np.array_equal(q.wordcount,arr2)):
+        raise ValueError('Filtered array not as expected.')
+
+@test
+def test_word_filters():
+    arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
+    brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
+    arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
+    arr2 = np.array([('a',1),('b',2)],dtype=config.DT_WORD_WEIGHT)
+    p = Post('asd', wordcount=arr, cs='123',cid='asd')
+    p.filter_by_word(['c','d','e'], reverse=False)
+    q = Post('def',wordcount=brr, cs='123',cid='asd')
+    q.filter_by_word(['c','d','e'], reverse=True)
+    if not (np.array_equal(p.wordcount,arr1) and np.array_equal(q.wordcount,arr2)):
+        raise ValueError('Filtered array not as expected.')
+
+
+@test
 def test_user_instance():
     u = User('blah', cid='asdadasd', cs='123123qd')
     try:
@@ -106,5 +135,7 @@ if __name__=='__main__':
     test_sentence_sanitation('Testing sentence decomposition:') # shared funcs
     test_structure_flattening('Testing flattening nested comments:')
     test_word_counts('Testing word count generation:')
+    test_weight_filters('Testing word count filters by weight:')
+    test_word_filters('Testing word count filters by words:')
 
     print('\n')

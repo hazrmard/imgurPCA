@@ -71,3 +71,27 @@ class Post(object):
         unique, counts = np.unique(words.keys(), return_counts=True)
         self.wordcount = np.array([(unique[i], words[unique[i]]*counts[i]) for i in
                                 range(len(unique))], dtype=config.DT_WORD_WEIGHT)
+
+
+    def filter_by_weight(self, minimum, maximum, reverse=False):
+        """filter out words in self.wordcount with minumum <= weights <= maximum
+         less than min. reverse=True filters out words with max < weights < min
+        """
+        if minimum>maximum:
+            raise ValueError('Minimum is less than maximum.')
+        if not reverse:
+            self.wordcount = self.wordcount[self.wordcount['weight']<=maximum]
+            self.wordcount = self.wordcount[self.wordcount['weight']>=minimum]
+        else:
+            temp = self.wordcount[self.wordcount['weight']>maximum]
+            self.wordcount = self.wordcount[self.wordcount['weight']<minimum]
+            self.wordcount = np.concatenate((self.wordcount, temp), axis=0)
+
+
+    def filter_by_word(self, words, reverse=False):
+        """if reverse=False, only keep elements in wordcount present in words,
+        else only keep elements in wordcount not in words.
+        @param words (list/array): a list of words in unicode
+        """
+        self.wordcount = self.wordcount[np.in1d(self.wordcount['word'], words,
+                                        assume_unique=True, invert=reverse)]
