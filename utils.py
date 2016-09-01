@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+from imgurpython import ImgurClient
+from config import InvalidArgument
 
 def flatten(container, lvl=1):
     """convert arbitrarily nested arrays of comments into a flat array
@@ -16,3 +18,13 @@ def sanitize(sentence):
     sentence = sentence.lower() # to lower case
     words = sentence.split()    # split on whitespace
     return words
+
+
+def set_up_client(instance, **kwargs):
+    if 'cid' in kwargs and 'cs' in kwargs:
+        instance.client = ImgurClient(kwargs['cid'], kwargs['cs'])
+    elif 'client' in kwargs:
+        instance.client = kwargs['client']
+    else:
+        raise InvalidArgument('Either include client=ImgurClient()'
+                            ' instance, or cid=CLIENT_ID and cs=CLIENT_SECRET')

@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from post import Post
 from user import User
+from parse import Parser
 from parallel import Parallel
 import utils
 import config
@@ -11,6 +12,9 @@ import numpy as np
 import os
 
 print('\n')
+
+SAMPLE_POST = None
+SAMPLE_USER = None
 
 def test(fn):
     def wrapper(*args, **kwargs):
@@ -37,13 +41,47 @@ def test_post_instance():
 @test
 def test_post_download():
     """check if all post/comment/user data can be downloaded"""
-    p = Post('MScn5', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
-    p.download()
+    global SAMPLE_POST
+    SAMPLE_POST = Post('ozfNx', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
+    SAMPLE_POST.download()
     try:
         p = Post('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
         p.download()
     except ImgurClientError:
         pass
+
+@test
+def test_post_user_extraction():
+    if SAMPLE_POST is None:
+        raise ValueError('Depends on download test success.')
+    ids = SAMPLE_POST.get_user_ids()
+    assert(isinstance(ids, (list,tuple)) and len(ids)>0 and isinstance(ids[0], basestring))
+
+@test
+def test_user_instance():
+    u = User('blah', cid='asdadasd', cs='123123qd')
+    try:
+        u = User(123)
+    except config.InvalidArgument:
+        pass
+
+@test
+def test_user_download():
+    global SAMPLE_USER
+    SAMPLE_USER = User('apitester', cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
+    SAMPLE_USER.download()
+    try:
+        u = User('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
+        u.download()
+    except ImgurClientError:
+        pass
+
+@test
+def test_user_post_extraction():
+    if SAMPLE_USER is None:
+        raise ValueError('Depends on download test success.')
+    ids = SAMPLE_USER.get_post_ids()
+    assert(isinstance(ids, (list,tuple)) and len(ids)>0 and isinstance(ids[0], basestring))
 
 @test
 def test_structure_flattening():
@@ -108,22 +146,19 @@ def test_word_filters():
         raise ValueError('Filtered array not as expected.')
 
 @test
-def test_user_instance():
-    u = User('blah', cid='asdadasd', cs='123123qd')
-    try:
-        u = User(123)
-    except config.InvalidArgument:
-        pass
-
-@test
-def test_user_download():
-    u = User('test', cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
-    u.download()
-    try:
-        u = User('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
-        u.download()
-    except ImgurClientError:
-        pass
+def test_sorting():
+    arr = np.array([('e',1),('a',2),('c',3),('b',4),('d',5)],dtype=config.DT_WORD_WEIGHT)
+    brr = np.array([('a',2),('b',4),('c',3),('d',5),('e',1)],dtype=config.DT_WORD_WEIGHT)
+    p = Post('asd',cid='asd',cs='asd', wordcount=arr)
+    p.sort_by_word()
+    if not np.array_equal(p.wordcount, brr):
+        raise ValueError('Sorted array incorrect.')
+    arr = np.array([('e',1),('a',2),('c',3),('b',4),('d',5)],dtype=config.DT_WORD_WEIGHT)
+    brr = np.array([('a',2),('b',4),('c',3),('d',5),('e',1)],dtype=config.DT_WORD_WEIGHT)
+    p = Post('asd',cid='asd',cs='asd', wordcount=brr)
+    p.sort_by_weight()
+    if not np.array_equal(p.wordcount, arr):
+        raise ValueError('Sorted array incorrect.')
 
 @test
 def test_parallel_func():
@@ -138,19 +173,31 @@ def test_parallel_func():
     if not r==[n**2 for n in range(50)]:
         raise ValueError('Result list incorrect.')
 
+@test
+def test_parser_instance():
+    P = Parser(cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
+
 if __name__=='__main__':
-    test_post_instance('Testing Post class instantiation:')     # Post class only
+#   Post class only
+    test_post_instance('Testing Post class instantiation:')
     test_post_download('Testing post data download:')
+    test_post_user_extraction('Testing user id extraction from post:')
 
-
-    test_user_instance('Testing User class instantiation:')     # User class only
+#   User class only
+    test_user_instance('Testing User class instantiation:')
     test_user_download('Testing user data download:')
+    test_user_post_extraction('Testing post id extraction from user:')
 
-    test_sentence_sanitation('Testing sentence decomposition:') # shared funcs
+#   shared User/Post funcs
+    test_sentence_sanitation('Testing sentence decomposition:')
     test_structure_flattening('Testing flattening nested comments:')
     test_word_counts('Testing word count generation:')
     test_weight_filters('Testing word count filters by weight:')
     test_word_filters('Testing word count filters by words:')
     test_parallel_func('Testing parallel execution:')
+    test_sorting('Testing for wordcount sorting:')
+
+#   Parser class only
+    test_parser_instance('Testing Parser class instantiation:')
 
     print('\n')

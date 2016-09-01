@@ -13,13 +13,7 @@ class Post(object):
         self.wordcount = np.array([], dtype=config.DT_WORD_WEIGHT)
         self.word_weight = config.DEFAULT_WORD_WEIGHT
 
-        if 'cid' in kwargs and 'cs' in kwargs:
-            self.client = ImgurClient(kwargs['cid'], kwargs['cs'])
-        elif 'client' in kwargs:
-            self.client = kwargs['client']
-        else:
-            raise config.InvalidArgument('Either include client=ImgurClient()'
-                                ' instance, or cid=CLIENT_ID and cs=CLIENT_SECRET')
+        utils.set_up_client(self, **kwargs)
 
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -37,6 +31,17 @@ class Post(object):
             self.user = self.client.get_account(post_obj.account_url)
 
         self.comments = self.client.gallery_item_comments(self.id)
+
+
+    def get_user_ids(self, replies=False):
+        """return a list of user ids (url).
+        @param all (boolean): True-> include child comments
+        """
+        if replies:
+            iterable = utils.flatten(self.comments)
+        else:
+            iterable = zip(self.comments, [1]*len(self.comments))
+        return [c[0].author for c in iterable]
 
 
     def set_word_weight_func(func):
@@ -95,3 +100,11 @@ class Post(object):
         """
         self.wordcount = self.wordcount[np.in1d(self.wordcount['word'], words,
                                         assume_unique=True, invert=reverse)]
+
+
+    def sort_by_word(self):
+        self.wordcount.sort(order=['word'])
+
+
+    def sort_by_weight(self):
+            self.wordcount.sort(order=['weight'])

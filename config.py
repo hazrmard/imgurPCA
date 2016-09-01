@@ -13,3 +13,6 @@ class InvalidArgument(Exception):
 
 class PrematureFunctionCall(Exception):
     pass
+
+class FunctionNotApplicable(Exception):
+    pass
