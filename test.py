@@ -2,11 +2,13 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from post import Post
 from user import User
+from parallel import Parallel
 import utils
 import config
 from imgurpython.helpers.error import ImgurClientError
 import pickle
 import numpy as np
+import os
 
 print('\n')
 
@@ -46,7 +48,8 @@ def test_post_download():
 @test
 def test_structure_flattening():
     """check if arbitrarily nested comments can be flattened for parsing"""
-    with open('test_comment.object', 'rb') as f:
+    p = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'test_comment.object'
+    with open(p, 'rb') as f:
         comments = pickle.load(f)             # a serialized comment object w/ known values
     n=0
     for c in utils.flatten(comments):
@@ -104,7 +107,6 @@ def test_word_filters():
     if not (np.array_equal(p.wordcount,arr1) and np.array_equal(q.wordcount,arr2)):
         raise ValueError('Filtered array not as expected.')
 
-
 @test
 def test_user_instance():
     u = User('blah', cid='asdadasd', cs='123123qd')
@@ -112,7 +114,6 @@ def test_user_instance():
         u = User(123)
     except config.InvalidArgument:
         pass
-
 
 @test
 def test_user_download():
@@ -123,6 +124,19 @@ def test_user_download():
         u.download()
     except ImgurClientError:
         pass
+
+@test
+def test_parallel_func():
+    class myParallel(Parallel):
+        def parallel_process(self, pkg, common):
+            return pkg**2
+
+    p = myParallel(range(50),nthreads=4)
+    p.start()
+    p.wait_for_threads()
+    r = p.get_results()
+    if not r==[n**2 for n in range(50)]:
+        raise ValueError('Result list incorrect.')
 
 if __name__=='__main__':
     test_post_instance('Testing Post class instantiation:')     # Post class only
@@ -137,5 +151,6 @@ if __name__=='__main__':
     test_word_counts('Testing word count generation:')
     test_weight_filters('Testing word count filters by weight:')
     test_word_filters('Testing word count filters by words:')
+    test_parallel_func('Testing parallel execution:')
 
     print('\n')
