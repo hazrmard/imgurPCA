@@ -9,6 +9,14 @@ import utils
 class Parser(object):
 
     def __init__(self, *args, **kwargs):
+        """
+        @param cid (string): client id, use with 'cs'
+        @param cs (string): client secret, use with 'cid'.
+        OR:
+        @param client (ImgurClient): imgurpython.ImgurClient instance
+        """
         utils.set_up_client(self, **kwargs)
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
+
+    

@@ -22,6 +22,10 @@ class User(Post):
     def points(self):                       # to work nicely with Post().points
         return self.reputation
 
+    @property
+    def network(self):
+        return self.get_post_ids()
+
 
     def download(self):
         """download the relevant gallery post, comments, and user data based on

@@ -18,6 +18,10 @@ class Post(object):
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
 
+    @property
+    def network(self):
+        return self.get_user_ids()
+
 
     def download(self):
         """download the relevant gallery post, comments, and user data based on
