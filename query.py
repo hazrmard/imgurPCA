@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from __future__ import print_function
 from config import InvalidArgument, PrematureFunctionCall
 
 
@@ -15,6 +16,10 @@ class Query(object):
     RANDOM = 7          # generate random gallery items
     _allowed_whats = (GALLERY_TOP, GALLERY_USER, GALLERY_HOT, SUBREDDIT, MEMES,
                         TAG, CUSTOM, RANDOM)
+    _rep_dict = {GALLERY_TOP: 'Gallery-Top', GALLERY_HOT: 'Gallery-Hot',
+                GALLERY_USER: 'User Submitted', SUBREDDIT: 'Subreddit',
+                MEMES: 'Memes Subgallery', TAG: 'Tagged Posts', CUSTOM: 'Custom Search',
+                RANDOM: 'Random Items'}
 
     # sort by
     TIME = 'time'       # allowed in: GALLERY_*, SUBREDDIT, MEMES, TAG, CUSTOM
@@ -43,10 +48,22 @@ class Query(object):
                         Query.GALLERY_USER, Query.SUBREDDIT, Query.MEMES, Query.TAG,
                         Query.CUSTOM, Query.RANDOM''')
         self._what = what
-        self._sort_by = Query.VIRAL
-        self._over = Query.DAY          # == window in API
-        self._q = ""                    # custom search parameter
-        self._q_params = None           # compiled parameters
+        self._sort_by = None
+        self._over = None          # == window in API
+        self._q = None             # custom search parameter
+        self._q_params = None      # compiled parameters
+
+    def __repr__(self):
+        r = '< Query: ' + Query._rep_dict[self._what] + ' '
+        if self._sort_by:
+            r += '- Sort by: ' + str(self._sort_by) + ' '
+        if self._over:
+            r += '- Window: ' + str(self._over) + ' '
+        if self._q:
+            r += '- Params: ' + str(self._q) + ' '
+        r += '>'
+        return r
+
 
     def over(self, ovr):
         """period to query over. Only applies if sort by: top
@@ -87,12 +104,16 @@ class Query(object):
         params = {}
         self._q_params = (self._what, params)
         if self._what == Query.CUSTOM:              # set up custom query
+            if self._q is None:
+                raise InvalidArgument('Set custom query params through Query().params()')
             params['q'] = self._q
         if self._what == Query.RANDOM:              # random needs no query params
             return
 
         if self._sort_by == Query.TOP:              # window only if Query.TOP
             params['window'] = self._over
+        elif self._over:                            # otherwise raise exception
+            raise InvalidArgument('Query().over() only applies for Query(Query.TOP)')
                                                     # process sort_bys:
         if self._what == Query.GALLERY_USER:        # accepts all sort_bys
             params['sort'] = self._sort_by
@@ -106,3 +127,5 @@ class Query(object):
                         Query.MEMES, Query.CUSTOM)) and (self._sort_by==Query.VIRAL):
             params['sort'] = self._sort_by
             return
+        else:
+            raise InvalidArgument('Invalid Query mode and sort-by combination.')
