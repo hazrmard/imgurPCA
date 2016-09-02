@@ -64,6 +64,14 @@ class Query(object):
         r += '>'
         return r
 
+    @property
+    def mode(self):
+        return self._what
+
+    @property
+    def content(self):
+        return self._q_params
+
 
     def over(self, ovr):
         """period to query over. Only applies if sort by: top
@@ -102,30 +110,37 @@ class Query(object):
         """compile choices into a dict/string query to be passed to Parser
         """
         params = {}
-        self._q_params = (self._what, params)
+        self._q_params = params
+        # query params handling
         if self._what == Query.CUSTOM:              # set up custom query
             if self._q is None:
                 raise InvalidArgument('Set custom query params through Query().params()')
             params['q'] = self._q
-        if self._what == Query.RANDOM:              # random needs no query params
-            return
-
+        elif self._what == Query.GALLERY_USER:      # add section param for GALLERY_*
+            params['section'] = 'user'
+        elif self._what == Query.GALLERY_TOP:
+            params['section'] = 'top'
+        elif self._what == Query.GALLERY_HOT:
+            params['section'] = 'hot'
+        elif self._what == Query.RANDOM:              # random needs no query params
+            return self
+        # conditional WINDOW param handling
         if self._sort_by == Query.TOP:              # window only if Query.TOP
             params['window'] = self._over
         elif self._over:                            # otherwise raise exception
             raise InvalidArgument('Query().over() only applies for Query(Query.TOP)')
-                                                    # process sort_bys:
+        # process sort_bys and compatible modes
         if self._what == Query.GALLERY_USER:        # accepts all sort_bys
             params['sort'] = self._sort_by
-            return
+            return self
         elif (self._what in (Query.GALLERY_TOP, Query.GALLERY_HOT, Query.SUBREDDIT,    # for TIME, TOP
                             Query.TAG, Query.MEMES, Query.CUSTOM)) and \
                             (self._sort_by in (Query.TIME, Query.TOP)):
             params['sort'] = self._sort_by
-            return
+            return self
         elif (self._what in (Query.GALLERY_TOP, Query.GALLERY_HOT, Query.TAG,         # for VIRAL
                         Query.MEMES, Query.CUSTOM)) and (self._sort_by==Query.VIRAL):
             params['sort'] = self._sort_by
-            return
+            return self
         else:
             raise InvalidArgument('Invalid Query mode and sort-by combination.')

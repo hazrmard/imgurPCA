@@ -11,7 +11,7 @@ class Parallel:
         """
         @param pkgs (iterable): a list of objects passed one at a time to parallel_process
         @param common (anything): common arguments passed to every process (optional)
-        @param nthreads (int): number of processes to run (preferably < len(pkgs))
+        @param nthreads (int): number of threads to run (preferably < len(pkgs))
         """
         self.nthreads = nthreads
         self.threads = []

@@ -4,6 +4,7 @@ from post import Post
 from user import User
 from parse import Parser
 from parallel import Parallel
+from query import Query
 import utils
 import config
 from imgurpython.helpers.error import ImgurClientError
@@ -16,14 +17,21 @@ print('\n')
 SAMPLE_POST = None
 SAMPLE_USER = None
 
+TESTS_PASSED = 0
+TESTS_FAILED = 0
+
 def test(fn):
     def wrapper(*args, **kwargs):
-        print(args[0])
+        print('{:<45}'.format(args[0]), end='')
         try:
             fn(*args[1:], **kwargs)
-            print('\tSUCCESS')
+            print('{:>10}'.format('\tSUCCESS'))
+            global TESTS_PASSED
+            TESTS_PASSED += 1
         except Exception as e:
-            print('\tFAULURE - ' + str(e))
+            print('{:>20}'.format('\tFAULURE - ' + str(e)))
+            global TESTS_FAILED
+            TESTS_FAILED += 1
         print()
     return wrapper
 
@@ -35,6 +43,7 @@ def test_post_instance():
     p = Post(123, comments=['123', 'abc'], cs='123fasfa', cid='asdeerwwe33')
     try:
         p = Post(123)
+        raise Exception('InvalidArgument expected.')
     except config.InvalidArgument:
         pass
 
@@ -47,6 +56,7 @@ def test_post_download():
     try:
         p = Post('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
         p.download()
+        raise Exception('ImgurClientError expected.')
     except ImgurClientError:
         pass
 
@@ -62,6 +72,7 @@ def test_user_instance():
     u = User('blah', cid='asdadasd', cs='123123qd')
     try:
         u = User(123)
+        raise Exception('InvalidArgument exception expected.')
     except config.InvalidArgument:
         pass
 
@@ -73,6 +84,7 @@ def test_user_download():
     try:
         u = User('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
         u.download()
+        raise Exception('ImgurClientError expected.')
     except ImgurClientError:
         pass
 
@@ -174,6 +186,28 @@ def test_parallel_func():
         raise ValueError('Result list incorrect.')
 
 @test
+def test_query_class():
+    q = Query(Query.GALLERY_HOT).sort_by(Query.TOP).over(Query.WEEK).construct()
+    assert q.content == {'section':'hot', 'sort':'top', 'window':'week'}, \
+                            'Not same as expected dict.'
+    q = Query(Query.SUBREDDIT).sort_by(Query.TIME).construct()
+    assert q.content == {'sort':'time'}, \
+                            'Not same as expected dict.'
+    q = Query(Query.MEMES).sort_by(Query.VIRAL).construct()
+    assert q.content == {'sort':'viral'}, \
+                            'Not same as expected dict.'
+    try:
+        q = Query(Query.SUBREDDIT).sort_by(Query.VIRAL).construct()
+        raise Exception('InvalidArgument exception expected.')
+    except config.InvalidArgument:
+        pass
+    try:
+        q = Query(Query.TAG).sort_by(Query.RISING).construct()
+        raise Exception('InvalidArgument exception expected.')
+    except config.InvalidArgument:
+        pass
+
+@test
 def test_parser_instance():
     P = Parser(cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
 
@@ -197,7 +231,13 @@ if __name__=='__main__':
     test_parallel_func('Testing parallel execution:')
     test_sorting('Testing for wordcount sorting:')
 
+#   Query class only
+    test_query_class('Testing query construction:')
+
 #   Parser class only
     test_parser_instance('Testing Parser class instantiation:')
 
-    print('\n')
+    print('\n==================')
+    print('Tests passed: ' + str(TESTS_PASSED))
+    print('Tests failed: ' + str(TESTS_FAILED))
+    print('==================\n')

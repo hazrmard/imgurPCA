@@ -8,7 +8,7 @@ class Post(object):
 
     def __init__(self, id, **kwargs):
         self.id = id                    # str
-        self.user = None                # account object (see imgur API doc.)
+        self.user = None                # account object (see imgur API data model.)
         self.comments = []              # array of comment objects (see imgur API doc.)
         self.wordcount = np.array([], dtype=config.DT_WORD_WEIGHT)
         self.word_weight = config.DEFAULT_WORD_WEIGHT
@@ -38,8 +38,8 @@ class Post(object):
 
 
     def get_user_ids(self, replies=False):
-        """return a list of user ids (url).
-        @param all (boolean): True-> include child comments
+        """return a list of usernames (url) that commented on post.
+        @param replies (boolean): True-> include child comments
         """
         if replies:
             iterable = utils.flatten(self.comments)

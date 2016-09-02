@@ -6,6 +6,10 @@ import config
 class User(Post):
 
     def __init__(self, url, *args, **kwargs):
+        """Instantiate a User object.
+        @param url (str): the username of an account. It is called 'url' in the
+                        API data model.
+        """
         super(User, self).__init__(None, *args, **kwargs)    # id=None, to be set later
 
         del self.user                       # redundant attrs from inheritance
@@ -31,12 +35,12 @@ class User(Post):
         """download the relevant gallery post, comments, and user data based on
         self.id.
         """
-        account_obj = self.client.get_account(self.url)
+        account_obj = self.client.get_account(self.username)
         for attr in account_obj.__dict__:
             setattr(self, attr, account_obj.__dict__[attr])
 
-        self.posts = self.client.get_account_submissions(self.url)
-        self.comments = self.client.get_account_comments(self.url)
+        self.posts = self.client.get_account_submissions(self.username)
+        self.comments = self.client.get_account_comments(self.username)
 
 
     def get_post_ids(self):
