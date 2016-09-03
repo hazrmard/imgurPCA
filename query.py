@@ -50,7 +50,7 @@ class Query(object):
         self._what = what
         self._sort_by = None
         self._over = None          # == window in API
-        self._q = None             # custom search parameter
+        self._q = None             # custom search parameter OR subreddit name
         self._q_params = None      # compiled parameters
 
     def __repr__(self):
@@ -97,11 +97,11 @@ class Query(object):
 
 
     def params(self, q):
-        """set the params for a Query.CUSTOM search
-        @param p (str): a query string as defined by the API docs
+        """set the params for a Query.CUSTOM search or Query.SUBREDDIT
+        @param p (str): a query string with keywords/subreddit name
         """
-        if not self._what == Query.CUSTOM:
-            raise PrematureFunctionCall('Query must me instantiated with Query.CUSTOM')
+        if not self._what in (Query.CUSTOM, Query.SUBREDDIT):
+            raise PrematureFunctionCall('Query must be Query.CUSTOM/Query.SUBREDDIT')
         self._q = q
         return self
 
@@ -116,6 +116,10 @@ class Query(object):
             if self._q is None:
                 raise InvalidArgument('Set custom query params through Query().params()')
             params['q'] = self._q
+        elif self._what == Query.SUBREDDIT:         # set up subreddit name
+            if self._q is None:
+                raise InvalidArgument('Set subreddit name through Query().params()')
+            params['subreddit'] = self._q
         elif self._what == Query.GALLERY_USER:      # add section param for GALLERY_*
             params['section'] = 'user'
         elif self._what == Query.GALLERY_TOP:
@@ -142,5 +146,5 @@ class Query(object):
                         Query.MEMES, Query.CUSTOM)) and (self._sort_by==Query.VIRAL):
             params['sort'] = self._sort_by
             return self
-        else:
+        elif self._what is None or self._sort_by is not None:
             raise InvalidArgument('Invalid Query mode and sort-by combination.')

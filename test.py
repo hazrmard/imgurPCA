@@ -7,6 +7,7 @@ from parallel import Parallel
 from query import Query
 import utils
 import config
+from imgurpython import ImgurClient
 from imgurpython.helpers.error import ImgurClientError
 import pickle
 import numpy as np
@@ -34,6 +35,12 @@ def test(fn):
             TESTS_FAILED += 1
         print()
     return wrapper
+
+def print_credits(cid=config.CLIENT_ID, cs=config.CLIENT_SECRET):
+    client = ImgurClient(cid,cs)
+    credits = client.credits
+    [print(x[0]+': '+str(x[1]),end='; ') for x in credits.items()]
+    print('\n')
 
 
 @test
@@ -65,7 +72,8 @@ def test_post_user_extraction():
     if SAMPLE_POST is None:
         raise ValueError('Depends on download test success.')
     ids = SAMPLE_POST.get_user_ids()
-    assert(isinstance(ids, (list,tuple)) and len(ids)>0 and isinstance(ids[0], basestring))
+    assert isinstance(ids, (list,tuple)) and len(ids)>0 and isinstance(ids[0], basestring),\
+            'ids non-list/tuple OR ids 0-length OR ids non-string'
 
 @test
 def test_user_instance():
@@ -93,7 +101,8 @@ def test_user_post_extraction():
     if SAMPLE_USER is None:
         raise ValueError('Depends on download test success.')
     ids = SAMPLE_USER.get_post_ids()
-    assert(isinstance(ids, (list,tuple)) and len(ids)>0 and isinstance(ids[0], basestring))
+    assert isinstance(ids, (list,tuple)) and len(ids)>0 and isinstance(ids[0], basestring),\
+            'ids non-list/tuple OR ids 0-length OR ids non-string'
 
 @test
 def test_structure_flattening():
@@ -119,17 +128,16 @@ def test_sentence_sanitation():
 @test
 def test_word_counts():
     """check if parsing funcs work w/ current imgur data structure"""
-    p = Post('MScn5', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
-    p.download()
+    obj = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'test_comment.object'
+    with open(obj, 'rb') as f:
+        comments = pickle.load(f)             # a serialized comment object w/ known values
+    p = Post('asd',cid='asd',cs='asd', comments=comments, points=100)
     p.generate_word_counts(child_comments=False, comment_votes=True,
                             comment_level=True)
     p.generate_word_counts(child_comments=False, comment_votes=True,
                             comment_level=False)
     p.generate_word_counts(child_comments=True, comment_votes=True,
                             comment_level=True)
-    u = User('test', cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
-    u.download()
-    u.generate_word_counts()
 
 @test
 def test_weight_filters():
@@ -190,8 +198,8 @@ def test_query_class():
     q = Query(Query.GALLERY_HOT).sort_by(Query.TOP).over(Query.WEEK).construct()
     assert q.content == {'section':'hot', 'sort':'top', 'window':'week'}, \
                             'Not same as expected dict.'
-    q = Query(Query.SUBREDDIT).sort_by(Query.TIME).construct()
-    assert q.content == {'sort':'time'}, \
+    q = Query(Query.SUBREDDIT).params('news').sort_by(Query.TIME).construct()
+    assert q.content == {'sort':'time', 'subreddit':'news'}, \
                             'Not same as expected dict.'
     q = Query(Query.MEMES).sort_by(Query.VIRAL).construct()
     assert q.content == {'sort':'viral'}, \
@@ -211,7 +219,26 @@ def test_query_class():
 def test_parser_instance():
     P = Parser(cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
 
+@test
+def test_parser_population():
+    p = Parser(cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
+    q = Query(Query.GALLERY_USER).construct()
+    p.get_posts(q)                          # get Post objects from query
+
+    global SAMPLE_POST
+    userids = SAMPLE_POST.network[:2]
+    p.populate_users(userids)
+
+    global SAMPLE_USER
+    postids = SAMPLE_USER.network[:2]
+    p.populate_posts(postids)
+    p.download()
+
 if __name__=='__main__':
+    cl = ImgurClient(config.CLIENT_ID, config.CLIENT_SECRET)
+    print('Available API credits: ')
+    print_credits()
+    print('===============')
 #   Post class only
     test_post_instance('Testing Post class instantiation:')
     test_post_download('Testing post data download:')
@@ -236,6 +263,11 @@ if __name__=='__main__':
 
 #   Parser class only
     test_parser_instance('Testing Parser class instantiation:')
+    test_parser_population('Testing query, post, user population:')
+
+    print('===============')
+    print('Available API credits: ')
+    print_credits()
 
     print('\n==================')
     print('Tests passed: ' + str(TESTS_PASSED))

@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from imgurpython import ImgurClient
+from imgurpython.helpers.error import ImgurClientRateLimitError, ImgurClientError
 from post import Post
 from user import User
 from query import Query
@@ -41,31 +42,31 @@ class Parser(object):
         """downloads whatever items (User/Post objects) are placed in self.items
         """
         D = Parser.Downloader(self.items, nthreads=self.nthreads)
-        D.start()
-        D.wait_for_threads()
+        try:
+            D.start()
+            D.wait_for_threads()
+        except ImgurClientRateLimitError:
+            print('Rate limit exceeded:\n' + str(self.client.credits))
 
 
     def get_posts(self, query):
-        """downloads posts to self.items using multiple threads.
+        """instantiates posts to self.items.
         @param query (Query): a Query instance. See query.py.
         """
         source_func = self._query_to_client[query.mode]
         self.items = source_func(**query.content)
         self.items = [Post(client=self.client, **p.__dict__) for p in self.items]
-        self.download()
 
 
     def populate_posts(self, posts):
-        """instantiate Post objects and download data, given post ids
+        """instantiate Post objects to self.items given post ids
         @param posts (list): a collection of post ids to download
         """
         self.items = [Post(client=self.client, id=p) for p in posts]
-        self.download()
 
 
     def populate_users(self, users):
-        """instantiate User objects and download data, given post ids
+        """instantiate User objects to self.items, given post ids
         @param users (list): a collection of user ids (usernames) to download
         """
-        self.items = [User(client=self.client, id=p) for u in users]
-        self.download()
+        self.items = [User(client=self.client, url=u) for u in users]
