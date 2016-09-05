@@ -1,8 +1,5 @@
 import numpy as np
 
-CLIENT_ID = '***REMOVED***'
-CLIENT_SECRET = '***REMOVED***'
-
 DT_WORD_COUNT = np.dtype([('word', 'U32'), ('count', int)])
 DT_WORD_WEIGHT = np.dtype([('word', 'U32'), ('weight', float)])
 

@@ -7,6 +7,7 @@ from user import User
 from query import Query
 from parallel import Parallel
 import utils
+import config
 
 
 class Parser(object):
@@ -26,6 +27,7 @@ class Parser(object):
         utils.set_up_client(self, **kwargs)
         self.items = []
         self.nthreads = nthreads
+        self.wordcount = None
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
 
@@ -70,3 +72,24 @@ class Parser(object):
         @param users (list): a collection of user ids (usernames) to download
         """
         self.items = [User(client=self.client, url=u) for u in users]
+
+
+    def consolidate(self):
+        """Generate a cumulative wordcount from the items' wordcounts. Add 0-weight
+        words to items' wordlists so all items have the same set of words. Sort
+        cumulative wordlist and item wordlists so index positions are identical.
+        """
+        word_dict = {}
+        for item in self.items:
+            for w in item.wordcount:
+                try:
+                    word_dict[w['word']] += w['weight']
+                except KeyError:
+                    word_dict[w['word']] = w['weight']
+        self.wordcount = np.array(word_dict.items(), dtype=config.DT_WORD_WEIGHT)
+
+        for item in self.items:
+            zero_words = np.setdiff1d(self.wordcount['words'], item.wordcount['words'], assume_unique=True)
+            zero_wordcounts = np.array(zip(zero_words, np.zeros(len(zero_words))), dtype=config.DT_WORD_WEIGHT)
+            item.wordcount = np.append(item.wordcount, zero_wordcounts)
+            item.sort()

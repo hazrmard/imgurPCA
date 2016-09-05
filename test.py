@@ -12,6 +12,7 @@ from imgurpython.helpers.error import ImgurClientError
 import pickle
 import numpy as np
 import os
+import time
 
 print('\n')
 
@@ -20,6 +21,9 @@ SAMPLE_USER = None
 
 TESTS_PASSED = 0
 TESTS_FAILED = 0
+
+CLIENT_SECRET = ''
+CLIENT_ID = ''
 
 def test(fn):
     def wrapper(*args, **kwargs):
@@ -36,17 +40,18 @@ def test(fn):
         print()
     return wrapper
 
-def print_credits(cid=config.CLIENT_ID, cs=config.CLIENT_SECRET):
+def print_credits(cs, cid):
     client = ImgurClient(cid,cs)
     credits = client.credits
+    credits['UserReset'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(credits['UserReset']))
     [print(x[0]+': '+str(x[1]),end='; ') for x in credits.items()]
     print('\n')
 
 
 @test
-def test_post_instance():
+def test_post_instance(cs, cid):
     """check if instantiation of Post works with accentable arguments"""
-    p = Post(123, comments=['123', 'abc'], cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
+    p = Post(123, comments=['123', 'abc'], cs=cs, cid=cid)
     p = Post(123, comments=['123', 'abc'], cs='123fasfa', cid='asdeerwwe33')
     try:
         p = Post(123)
@@ -55,20 +60,20 @@ def test_post_instance():
         pass
 
 @test
-def test_post_download():
+def test_post_download(cs, cid):
     """check if all post/comment/user data can be downloaded"""
     global SAMPLE_POST
-    SAMPLE_POST = Post('ozfNx', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
+    SAMPLE_POST = Post('ozfNx', cs=cs, cid=cid)
     SAMPLE_POST.download()
     try:
-        p = Post('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
+        p = Post('123', cs=cs, cid=cid)
         p.download()
         raise Exception('ImgurClientError expected.')
     except ImgurClientError:
         pass
 
 @test
-def test_post_user_extraction():
+def test_post_user_extraction(cs, cid):
     if SAMPLE_POST is None:
         raise ValueError('Depends on download test success.')
     ids = SAMPLE_POST.get_user_ids()
@@ -76,7 +81,7 @@ def test_post_user_extraction():
             'ids non-list/tuple OR ids 0-length OR ids non-string'
 
 @test
-def test_user_instance():
+def test_user_instance(cs, cid):
     u = User('blah', cid='asdadasd', cs='123123qd')
     try:
         u = User(123)
@@ -85,19 +90,19 @@ def test_user_instance():
         pass
 
 @test
-def test_user_download():
+def test_user_download(cs, cid):
     global SAMPLE_USER
-    SAMPLE_USER = User('apitester', cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
+    SAMPLE_USER = User('apitester', cid=cid, cs=cs)
     SAMPLE_USER.download()
     try:
-        u = User('123', cs=config.CLIENT_SECRET, cid=config.CLIENT_ID)
+        u = User('123', cs=cs, cid=cid)
         u.download()
         raise Exception('ImgurClientError expected.')
     except ImgurClientError:
         pass
 
 @test
-def test_user_post_extraction():
+def test_user_post_extraction(cs, cid):
     if SAMPLE_USER is None:
         raise ValueError('Depends on download test success.')
     ids = SAMPLE_USER.get_post_ids()
@@ -105,9 +110,10 @@ def test_user_post_extraction():
             'ids non-list/tuple OR ids 0-length OR ids non-string'
 
 @test
-def test_structure_flattening():
+def test_structure_flattening(cs, cid):
     """check if arbitrarily nested comments can be flattened for parsing"""
-    p = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'test_comment.object'
+    p = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'testdata' +\
+                                                os.sep + 'test_comment.object'
     with open(p, 'rb') as f:
         comments = pickle.load(f)             # a serialized comment object w/ known values
     n=0
@@ -117,7 +123,7 @@ def test_structure_flattening():
         raise ValueError('Comment object incorrectly flattened.')
 
 @test
-def test_sentence_sanitation():
+def test_sentence_sanitation(cs, cid):
     """check if sentences can be correctly decomposed into words"""
     s = 'THE QuiCK !brOWn.'
     expected = ['the', 'quick', '!brown.']
@@ -126,9 +132,9 @@ def test_sentence_sanitation():
         raise ValueError('Unexpected sentence decomposition.')
 
 @test
-def test_word_counts():
+def test_word_counts(cs, cid):
     """check if parsing funcs work w/ current imgur data structure"""
-    obj = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'test_comment.object'
+    obj = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'testdata'+os.path.sep+'test_comment.object'
     with open(obj, 'rb') as f:
         comments = pickle.load(f)             # a serialized comment object w/ known values
     p = Post('asd',cid='asd',cs='asd', comments=comments, points=100)
@@ -140,7 +146,7 @@ def test_word_counts():
                             comment_level=True)
 
 @test
-def test_weight_filters():
+def test_weight_filters(cs, cid):
     arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
@@ -153,7 +159,7 @@ def test_weight_filters():
         raise ValueError('Filtered array not as expected.')
 
 @test
-def test_word_filters():
+def test_word_filters(cs, cid):
     arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
@@ -166,7 +172,7 @@ def test_word_filters():
         raise ValueError('Filtered array not as expected.')
 
 @test
-def test_sorting():
+def test_sorting(cs, cid):
     arr = np.array([('e',1),('a',2),('c',3),('b',4),('d',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',2),('b',4),('c',3),('d',5),('e',1)],dtype=config.DT_WORD_WEIGHT)
     p = Post('asd',cid='asd',cs='asd', wordcount=arr)
@@ -181,7 +187,7 @@ def test_sorting():
         raise ValueError('Sorted array incorrect.')
 
 @test
-def test_parallel_func():
+def test_parallel_func(cs, cid):
     class myParallel(Parallel):
         def parallel_process(self, pkg, common):
             return pkg**2
@@ -194,7 +200,7 @@ def test_parallel_func():
         raise ValueError('Result list incorrect.')
 
 @test
-def test_query_class():
+def test_query_class(cs, cid):
     q = Query(Query.GALLERY_HOT).sort_by(Query.TOP).over(Query.WEEK).construct()
     assert q.content == {'section':'hot', 'sort':'top', 'window':'week'}, \
                             'Not same as expected dict.'
@@ -216,12 +222,12 @@ def test_query_class():
         pass
 
 @test
-def test_parser_instance():
-    P = Parser(cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
+def test_parser_instance(cs, cid):
+    P = Parser(cid=cid, cs=cs)
 
 @test
-def test_parser_population():
-    p = Parser(cid=config.CLIENT_ID, cs=config.CLIENT_SECRET)
+def test_parser_population(cs, cid):
+    p = Parser(cid=cid, cs=cs)
     q = Query(Query.GALLERY_USER).construct()
     p.get_posts(q)                          # get Post objects from query
 
@@ -235,39 +241,38 @@ def test_parser_population():
     p.download()
 
 if __name__=='__main__':
-    cl = ImgurClient(config.CLIENT_ID, config.CLIENT_SECRET)
     print('Available API credits: ')
-    print_credits()
+    print_credits(cid=CLIENT_ID, cs=CLIENT_SECRET)
     print('===============')
 #   Post class only
-    test_post_instance('Testing Post class instantiation:')
-    test_post_download('Testing post data download:')
-    test_post_user_extraction('Testing user id extraction from post:')
+    test_post_instance('Testing Post class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_post_download('Testing post data download:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_post_user_extraction('Testing user id extraction from post:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
 #   User class only
-    test_user_instance('Testing User class instantiation:')
-    test_user_download('Testing user data download:')
-    test_user_post_extraction('Testing post id extraction from user:')
+    test_user_instance('Testing User class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_user_download('Testing user data download:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_user_post_extraction('Testing post id extraction from user:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
 #   shared User/Post funcs
-    test_sentence_sanitation('Testing sentence decomposition:')
-    test_structure_flattening('Testing flattening nested comments:')
-    test_word_counts('Testing word count generation:')
-    test_weight_filters('Testing word count filters by weight:')
-    test_word_filters('Testing word count filters by words:')
-    test_parallel_func('Testing parallel execution:')
-    test_sorting('Testing for wordcount sorting:')
+    test_sentence_sanitation('Testing sentence decomposition:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_structure_flattening('Testing flattening nested comments:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_word_counts('Testing word count generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_weight_filters('Testing word count filters by weight:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_word_filters('Testing word count filters by words:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_parallel_func('Testing parallel execution:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_sorting('Testing for wordcount sorting:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
 #   Query class only
-    test_query_class('Testing query construction:')
+    test_query_class('Testing query construction:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
 #   Parser class only
-    test_parser_instance('Testing Parser class instantiation:')
-    test_parser_population('Testing query, post, user population:')
+    test_parser_instance('Testing Parser class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_parser_population('Testing query, post, user population:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
     print('===============')
     print('Available API credits: ')
-    print_credits()
+    print_credits(cid=CLIENT_ID, cs=CLIENT_SECRET)
 
     print('\n==================')
     print('Tests passed: ' + str(TESTS_PASSED))

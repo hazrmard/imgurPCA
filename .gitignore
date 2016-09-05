@@ -61,3 +61,7 @@ target/
 .idea
 *.csv
 *.pyc
+
+# sensitive data
+clientinfo.txt
+*.ps1
