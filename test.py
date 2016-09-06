@@ -295,15 +295,18 @@ def test_learner_eigenvectors(cs, cid):
     SAMPLE_LEARNER.get_eigenvectors()
     assert len(SAMPLE_LEARNER.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
+    assert not np.any(np.iscomplex(SAMPLE_LEARNER.axes)), 'Complex axes found.'
 
     l = Learner(user=SAMPLE_USER)
     l.get_comment_eigenvectors(child_comments=True)
     assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
+    assert not np.any(np.iscomplex(l.axes)), 'Complex axes found.'
     l = Learner(user=SAMPLE_POST)
     l.get_comment_eigenvectors()
     assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
+    assert not np.any(np.iscomplex(l.axes)), 'Complex axes found.'
 
 
 if __name__=='__main__':

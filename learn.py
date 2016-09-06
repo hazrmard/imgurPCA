@@ -64,7 +64,8 @@ class Learner(object):
             if self.source._consolidated:
                 counts = np.vstack((item.wordcount['weight'] for item in self.source.items))
                 cov = np.cov(counts)
-                eiw, eiv = np.linalg.eig(cov)       # eiw=e-vals, eiv=e-vectors
+                eiw, eiv = np.linalg.eigh(cov)       # eiw=e-vals, eiv=e-vectors
+                # Note .eig returns complex due to floating point precision errors
                 order = eiw.argsort()[::-1]
                 eiw = eiw[order]
                 eiv = eiv[:, order]                 # vals/vecs ordered by largest eval
