@@ -65,3 +65,4 @@ target/
 # sensitive data
 clientinfo.txt
 *.ps1
+myconfig.py

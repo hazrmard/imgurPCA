@@ -297,6 +297,10 @@ def test_learner_eigenvectors(cs, cid):
                                 'Axes not generated.'
 
     l = Learner(user=SAMPLE_USER)
+    l.get_comment_eigenvectors(child_comments=True)
+    assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
+                                'Axes not generated.'
+    l = Learner(user=SAMPLE_POST)
     l.get_comment_eigenvectors()
     assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'

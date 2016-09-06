@@ -15,7 +15,7 @@ class User(Post):
         del self.user                       # redundant attrs from inheritance
 
         self.url = url                      # = username
-        self.reputation = 0                 # = points (alias for inheritance)
+        self.reputation = 1                 # = points (alias for inheritance)
         self.posts = []                     # list of Gallery Image/Album objects, see API
 
     @property

@@ -86,8 +86,7 @@ class Learner(object):
                                     self.word_weight, False passes 1 for all comments.
         """
         if self._stype=='user' or self._stype=='post':
-            CLASS = Post if self._stype=='post' else User
-            temp = [CLASS('x', cs='x', cid='x', comments=[c]) for c in self.source.comments]
+            temp = [Post('x', cs='x', cid='x', comments=[c], points=1) for c in self.source.comments]
             for p in temp:
                 p.word_weight = self.source.word_weight
                 p.generate_word_counts(child_comments, comment_votes, comment_level)
