@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from post import Post
 from user import User
 from parse import Parser
+from learn import Learner
 from parallel import Parallel
 from query import Query
 import utils
@@ -13,17 +14,23 @@ import pickle
 import numpy as np
 import os
 import time
+import sys
 
 print('\n')
 
 SAMPLE_POST = None
 SAMPLE_USER = None
+SAMPLE_PARSER = None
+SAMPLE_LEARNER = None
 
 TESTS_PASSED = 0
 TESTS_FAILED = 0
 
 CLIENT_SECRET = ''
 CLIENT_ID = ''
+
+def get_test_data(cs, cid):
+    pass
 
 def test(fn):
     def wrapper(*args, **kwargs):
@@ -63,7 +70,7 @@ def test_post_instance(cs, cid):
 def test_post_download(cs, cid):
     """check if all post/comment/user data can be downloaded"""
     global SAMPLE_POST
-    SAMPLE_POST = Post('ozfNx', cs=cs, cid=cid)
+    SAMPLE_POST = Post('b91LE', cs=cs, cid=cid)
     SAMPLE_POST.download()
     try:
         p = Post('123', cs=cs, cid=cid)
@@ -144,6 +151,12 @@ def test_word_counts(cs, cid):
                             comment_level=False)
     p.generate_word_counts(child_comments=True, comment_votes=True,
                             comment_level=True)
+    global SAMPLE_USER
+    global SAMPLE_POST
+    if SAMPLE_USER is None or SAMPLE_POST is None:
+        raise ValueError('Depends on download test success.')
+    SAMPLE_USER.generate_word_counts()      # User has no child_comments option
+    SAMPLE_POST.generate_word_counts(child_comments=True)
 
 @test
 def test_weight_filters(cs, cid):
@@ -227,20 +240,72 @@ def test_parser_instance(cs, cid):
 
 @test
 def test_parser_population(cs, cid):
-    p = Parser(cid=cid, cs=cs)
+    global SAMPLE_PARSER
+    SAMPLE_PARSER = Parser(cid=cid, cs=cs)
     q = Query(Query.GALLERY_USER).construct()
-    p.get_posts(q)                          # get Post objects from query
+    SAMPLE_PARSER.get_posts(q)                          # get Post objects from query
+    assert len(SAMPLE_PARSER.items)>0, 'Query result of size 0.'
 
     global SAMPLE_POST
-    userids = SAMPLE_POST.network[:2]
-    p.populate_users(userids)
+    userids = SAMPLE_POST.network
+    SAMPLE_PARSER.populate_users(userids)
 
     global SAMPLE_USER
-    postids = SAMPLE_USER.network[:2]
-    p.populate_posts(postids)
-    p.download()
+    postids = SAMPLE_USER.network[:5]
+    SAMPLE_PARSER.populate_posts(postids)
+    SAMPLE_PARSER.download()
+
+@test
+def test_parser_consolidation(cs, cid):
+    arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
+    brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f', 6)],dtype=config.DT_WORD_WEIGHT)
+    crr = np.array([('a',2),('b',4),('c',6),('d',8),('e',10), ('f', 6)],dtype=config.DT_WORD_WEIGHT)
+    drr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f',0)],dtype=config.DT_WORD_WEIGHT)
+    err = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f',6)],dtype=config.DT_WORD_WEIGHT)
+    p1 = Post(id=1,cs='123',cid='123',wordcount=arr)
+    p2 = Post(id=2,cs='123',cid='123',wordcount=brr)
+    P = Parser(cid='123',cs='123',items=(p1,p2))
+    P.consolidate()
+    assert np.array_equal(P.wordcount, crr), "Unexpected array output."
+    assert np.array_equal(p1.wordcount, drr), "Unexpected array output."
+    assert np.array_equal(p2.wordcount, err), "Unexpected array output."
+    global SAMPLE_PARSER
+    if SAMPLE_PARSER is None:
+        raise ValueError('Depends on population test success.')
+    for item in SAMPLE_PARSER.items:                    # so consolidation can work
+        item.generate_word_counts(child_comments=True)
+    SAMPLE_PARSER.consolidate()
+
+@test
+def test_learner_instance(cs, cid):
+    global SAMPLE_USER
+    global SAMPLE_POST
+    global SAMPLE_PARSER
+    global SAMPLE_LEARNER
+    SAMPLE_LEARNER = Learner(user=SAMPLE_USER)
+    SAMPLE_LEARNER = Learner(user=SAMPLE_PARSER) # does not check for type, just keyword
+    SAMPLE_LEARNER = Learner(parser=SAMPLE_PARSER)  # passed to the next func
+
+@test
+def test_learner_eigenvectors(cs, cid):
+    global SAMPLE_PARSER
+    global SAMPLE_USER
+    global SAMPLE_LEARNER
+    SAMPLE_LEARNER = Learner(parser=SAMPLE_PARSER)
+    SAMPLE_LEARNER.get_eigenvectors()
+    assert len(SAMPLE_LEARNER.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
+                                'Axes not generated.'
+
+    l = Learner(user=SAMPLE_USER)
+    l.get_comment_eigenvectors()
+    assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
+                                'Axes not generated.'
+
 
 if __name__=='__main__':
+    if '-n' in sys.argv:
+        get_test_data(cs=CLIENT_SECRET, cid=CLIENT_ID)
+
     print('Available API credits: ')
     print_credits(cid=CLIENT_ID, cs=CLIENT_SECRET)
     print('===============')
@@ -269,6 +334,11 @@ if __name__=='__main__':
 #   Parser class only
     test_parser_instance('Testing Parser class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_parser_population('Testing query, post, user population:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_parser_consolidation('Testing for parser consolidation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+
+#   Learner instance only
+    test_learner_instance('Testing Learner class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_learner_eigenvectors('Testing eigenvector generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
     print('===============')
     print('Available API credits: ')

@@ -10,7 +10,7 @@ class Post(object):
         self.id = id                    # str
         self.user = None                # account object (see imgur API data model.)
         self.comments = []              # array of comment objects (see imgur API doc.)
-        self.wordcount = np.array([], dtype=config.DT_WORD_WEIGHT)
+        self.wordcount = None
         self.word_weight = config.DEFAULT_WORD_WEIGHT
 
         utils.set_up_client(self, **kwargs)
@@ -60,6 +60,11 @@ class Post(object):
                             comment_level=True):
         """generate a numpy array of words and their weights as determined by
         self.word_weight function.
+        @param child_comments (bool): whether to parse child comments or not
+        @param comment_votes (bool): whether to pass comment votes to self.word_weight,
+                                    False passes 1 for all comments.
+        @param comment_level (bool): whether to pass comment nest level to
+                                    self.word_weight, False passes 1 for all comments.
         """
         words = {}
         if child_comments:

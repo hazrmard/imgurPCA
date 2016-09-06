@@ -52,6 +52,13 @@ class User(Post):
         raise config.FunctionNotApplicable('Use get_post_ids() for User objects')
 
 
-    def generate_word_counts(self, comment_votes=True):
+    def generate_word_counts(self, comment_votes=True, *args, **kwargs):
+        """same as Post.generate_word_counts, but with no option for child_comments
+        or comment level. From the user perspective all comments are equally
+        weighed.
+        @param comment_votes (bool): whether to pass comment votes to self.word_weight
+                                    sends 1 is False.
+        *args and **kwargs added to allow for same function signature as Post func.
+        """
         super(User, self).generate_word_counts(child_comments=False,
                                 comment_level=False, comment_votes=comment_votes)
