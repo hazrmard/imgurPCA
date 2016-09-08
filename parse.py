@@ -29,7 +29,7 @@ class Parser(object):
         utils.set_up_client(self, **kwargs)
         self.items = []
         self.nthreads = nthreads
-        self.wordcount = np.array([], dtype=config.DT_WORD_WEIGHT)
+        self.wordcount = None
         self._consolidated = False      # flag to signal if all wordcounts sorted
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -89,15 +89,21 @@ class Parser(object):
         self.items = [User(client=self.client, url=u) for u in users]
 
 
-    def consolidate(self):
+    def consolidate(self, words=None):
         """Generate a cumulative wordcount from the items' wordcounts. Add 0-weight
         words to items' wordlists so all items have the same set of words. Sort
         cumulative wordlist and item wordlists (by word) so index positions are
         identical.
+        @param words (list/array): OPTIONAL - a list of words to keep and consolidate.
+                                Otherwise, generates list of unique words from
+                                all wordcounts in self.items
         """
         if len(self.items)==0:
             raise config.PrematureFunctionCall('No User/Post objects in self.items.')
         word_dict = {}
+        if words is not None:           # initialize dict with acceptable words
+            word_dict = {w:0 for w in words}
+
         for item in self.items:
             if item.wordcount is None:
                 raise config.PrematureFunctionCall('Generate wordcounts first.')
@@ -105,7 +111,8 @@ class Parser(object):
                 try:
                     word_dict[w['word']] += w['weight']
                 except KeyError:
-                    word_dict[w['word']] = w['weight']
+                    if words is None:   # otherwise skip word not in words
+                        word_dict[w['word']] = w['weight']
         self.wordcount = np.array(word_dict.items(), dtype=config.DT_WORD_WEIGHT)
         self.wordcount.sort(order=[config.DEFAULT_SORT_ORDER])
 
@@ -115,3 +122,12 @@ class Parser(object):
             item.wordcount = np.append(item.wordcount, zero_wordcounts)
             item.sort()     # using default sort order
         self._consolidated = True
+
+
+    def get_baseline(self):
+        """given the wordcounts for all self.items, find the average weight
+        and variance of each word. This can then be used to filter out frequent
+        or consistently appearing words to reduce bloat. Can only be called after
+        consolidation.
+        """
+        pass

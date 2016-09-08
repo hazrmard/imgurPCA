@@ -100,8 +100,8 @@ class Query(object):
         """set the params for a Query.CUSTOM search or Query.SUBREDDIT
         @param p (str): a query string with keywords/subreddit name
         """
-        if not self._what in (Query.CUSTOM, Query.SUBREDDIT):
-            raise PrematureFunctionCall('Query must be Query.CUSTOM/Query.SUBREDDIT')
+        if not self._what in (Query.CUSTOM, Query.SUBREDDIT, Query.TAG):
+            raise PrematureFunctionCall('Query must be Query.CUSTOM/Query.SUBREDDIT/Query.TAG')
         self._q = q
         return self
 
@@ -120,6 +120,10 @@ class Query(object):
             if self._q is None:
                 raise InvalidArgument('Set subreddit name through Query().params()')
             params['subreddit'] = self._q
+        elif self._what == Query.TAG:               # set up tag param
+            if self._q is None:
+                raise InvalidArgument('Set tag through Query().params()')
+            params['tag'] = self._q
         elif self._what == Query.GALLERY_USER:      # add section param for GALLERY_*
             params['section'] = 'user'
         elif self._what == Query.GALLERY_TOP:

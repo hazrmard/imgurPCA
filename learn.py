@@ -131,3 +131,19 @@ class Learner(object):
             # vec now only contains words present in self.words in same order
             weights[i] = vec['weight']
         return np.dot(weights, self.axes)   #projection = weights . axes
+
+
+    def k_means_cluster(self, projection, nclusters):
+        """using projection coordinates, group coordinates together based on
+        smallest cartesian distance to cluster centers.
+        @param projection (2D ndarray): a 2D numpy array with rows representing
+                                    coordinates on self.axes
+        @param nclusters (int): number of clusters to create
+        Returns a tuple. First element is a 2D numpy array with each row -> cluster
+        center coordinate (==len(self.axes) elements).
+        Second element is 1D numpy array the size of projection with int labels
+        for each coordinate's cluster: [1,1,2,3,4,0....]. Numbers correspond to
+        cluster coordinate indices in 1st element. Order corresponds to elements
+        in projection argument.
+        """
+        pass

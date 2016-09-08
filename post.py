@@ -125,6 +125,6 @@ class Post(object):
 
     def sort(self):
         """sorts according to whatever default sort order is set. Default order is
-        Used by Parser.consolidate and Learner.project() functions.
+        used by Parser.consolidate() and Learner.project() functions as well.
         """
         self.wordcount.sort(order=[config.DEFAULT_SORT_ORDER])
