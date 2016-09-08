@@ -134,7 +134,7 @@ class Learner(object):
         that it is consolidated (for faster processing).
         @param source (Parser/Post/User): an instance of a Post/Parser/User object
                                         with wordcounts calculated.
-        Returns a 2D numpy array of projections (each row -> coordinates)
+        Returns a 2D numpy array of projections (each row->coordinates, column->axis)
         """
         if self.axes is None:
             raise config.PrematureFunctionCall('Calculate axes first.')
@@ -172,4 +172,29 @@ class Learner(object):
         cluster indices in 1st element. Order corresponds to elements in
         projection argument.
         """
-        pass
+        pmax = np.amax(projection)  # get bounding box for cluster centers
+        pmin = np.amin(projection)
+        centers = np.random.randint(pmin, pmax, size=(nclusters, len(projection[0]))) # allocate memory
+        pre = np.zeros(len(projection))
+        nex = np.ones(len(projection))
+        while not np.array_equal(pre, nex):
+            pre = nex
+            # calculate new assignments based on centers
+            for i in range(len(projection)):
+                closest = None
+                for j in range(len(centers)):
+                    diff = projection[i] - centers[j]
+                    dist = np.dot(diff, diff)   # squared cartesian distance
+                    if closest is None:
+                        closest = dist
+                    elif dist < closest:
+                        closest = dist
+                        nex[i] = j
+
+            # calculate new centers based on assignments
+            for k in range(len(centers)):
+                mine = nex==k
+                if np.any(mine):
+                    centers[k] = np.mean(projection[mine], axis=0)
+
+        return centers, nex

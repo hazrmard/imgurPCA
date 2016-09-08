@@ -325,6 +325,14 @@ def test_learner_projection(cs, cid):
     assert len(proj)==1 and len(proj[0])==SAMPLE_LEARNER.axes.shape[1], \
                 'Unexpected dimensions in result projections.'
 
+@test
+def test_learner_clustering(cs, cid):
+    l = Learner(parser=None)
+    proj = np.array([[1,1,1],[1,2,3],[3,0,1],[2,0,0],[0,0,1],[0,1,0],[3,2,1],
+                    [0,0,0],[2,1,2],[2,2,2],[3,2,3],[3,2,0],[1,1,0],[0,0,3]])
+    centers, assignments = l.k_means_cluster(proj, 3)
+    assert len(centers)==3 and len(assignments)==len(proj), \
+            'Unequal dimensions to input data.'
 
 
 if __name__=='__main__':
@@ -365,6 +373,7 @@ if __name__=='__main__':
     test_learner_instance('Testing Learner class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_learner_axes('Testing eigenvector generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_learner_projection('Testing projection to axes:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_learner_clustering('Testing k-means clustering:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
     print('===============')
     print('Available API credits: ')
