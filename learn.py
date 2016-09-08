@@ -30,7 +30,9 @@ class Learner(object):
         else:
             raise AttributeError('Include parser, post, or user key/value pair.')
 
-        self.axes = None        # np.array
+        self.axes = None          # np.array 2D [len(self.words) x # of axes]
+        self._custom_words = None # list of words if custom axes set, alternative
+                                  # to self.source.words. Set by self.set_axes()
 
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -54,14 +56,35 @@ class Learner(object):
         """returns an array of words in the source's wordcount. Useful for finding
         what words positions represent in covariance matrice, eigenvectors etc.
         """
-        return self.source.wordcount['word']
+        if self._custom_words is None:      # i.e. custom axes not set then:
+            return self.source.wordcount['word']
+        else:
+            return self._custom_words
+
+
+    def set_axes(self, axes):
+        """set custom axes for further computations. Overrides get_axes if
+        used previously. Each axis is an array of words and their weights.
+        @param axes (ndarray): a list/tuple/array/generator of config.DT_WORD_WEIGHT
+                                arrays. Each array represents an axis.
+        Returns 2D array (each row -> word weight in self.words, column -> axis vector)
+        """
+        p = Parser(cs='bleh', cid='bleh')
+        p.items = [Post(id='bleh', cid='bleh', cs='bleh', wordcount=w) for w in axes]
+        p.consolidate()
+        self._custom_words = p.words
+        self.axes = np.vstack((a.wordcount['weight'] for a in p.items)).T
+        return self.axes
+
 
     def get_axes(self):
         """get the eignevectors describing the wordcounts of the items in the
         Parser given to Learner. For comment-wise vectors, use get_comment_eigenvectors()
+        Returns 2D array (each row -> word weight in self.words, column -> axis vector)
         """
         if self._stype=='parser':
             if self.source._consolidated:
+                self._custom_words = None           # default to using source words
                 counts = np.vstack((item.wordcount['weight'] for item in self.source.items)).T
                 cov = np.cov(counts)
                 eiw, eiv = np.linalg.eigh(cov)       # eiw=e-vals, eiv=e-vectors
@@ -97,6 +120,9 @@ class Learner(object):
             P.consolidate()
             L = Learner(parser=P)
             self.axes = L.get_axes()
+            self._custom_words = P.words    # since child_comments might be
+                                            # different b/w source.generate_word_counts
+                                            # and self.get_comment_axes
             return self.axes
         else:
             raise Exception('get_comment_eigenvectors only for Post/User objects.')
@@ -140,10 +166,10 @@ class Learner(object):
                                     coordinates on self.axes
         @param nclusters (int): number of clusters to create
         Returns a tuple. First element is a 2D numpy array with each row -> cluster
-        center coordinate (==len(self.axes) elements).
+        center coordinate (len==# of axes).
         Second element is 1D numpy array the size of projection with int labels
         for each coordinate's cluster: [1,1,2,3,4,0....]. Numbers correspond to
-        cluster coordinate indices in 1st element. Order corresponds to elements
-        in projection argument.
+        cluster indices in 1st element. Order corresponds to elements in
+        projection argument.
         """
         pass

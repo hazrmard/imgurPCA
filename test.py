@@ -293,20 +293,27 @@ def test_learner_axes(cs, cid):
     global SAMPLE_LEARNER
     SAMPLE_LEARNER = Learner(parser=SAMPLE_PARSER)
     _ = SAMPLE_LEARNER.get_axes()
-    assert len(SAMPLE_LEARNER.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
+    assert len(SAMPLE_LEARNER.axes)==len(SAMPLE_LEARNER.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
     assert not np.any(np.iscomplex(SAMPLE_LEARNER.axes)), 'Complex axes found.'
 
     l = Learner(user=SAMPLE_USER)
     _ = l.get_comment_axes(child_comments=True)
-    assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
+    assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
     assert not np.any(np.iscomplex(l.axes)), 'Complex axes found.'
+
     l = Learner(user=SAMPLE_POST)
     _ = l.get_comment_axes()
-    assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
+    assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
     assert not np.any(np.iscomplex(l.axes)), 'Complex axes found.'
+
+    myax1 = np.array([('a',1),('b',2),('c',3)], dtype=config.DT_WORD_WEIGHT)
+    myax2 = np.array([('a',2),('b',4),('d',1)], dtype=config.DT_WORD_WEIGHT)
+    _ = l.set_axes(axes=[myax1, myax2])
+    assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
+                                'Axes not generated.'
 
 @test
 def test_learner_projection(cs, cid):
@@ -315,7 +322,7 @@ def test_learner_projection(cs, cid):
     if SAMPLE_LEARNER.axes is None:
         raise ValueError('Depends on learner axes test success.')
     proj = SAMPLE_LEARNER.project(SAMPLE_POST)
-    assert len(proj)==1 and len(proj[0])==len(SAMPLE_LEARNER.axes), \
+    assert len(proj)==1 and len(proj[0])==SAMPLE_LEARNER.axes.shape[1], \
                 'Unexpected dimensions in result projections.'
 
 

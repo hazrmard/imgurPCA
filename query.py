@@ -53,7 +53,7 @@ class Query(object):
         self._q = None             # custom search parameter OR subreddit name
         self._q_params = None      # compiled parameters
 
-    def __repr__(self):
+    def __str__(self):
         r = '< Query: ' + Query._rep_dict[self._what] + ' '
         if self._sort_by:
             r += '- Sort by: ' + str(self._sort_by) + ' '
