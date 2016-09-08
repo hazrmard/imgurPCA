@@ -287,26 +287,37 @@ def test_learner_instance(cs, cid):
     SAMPLE_LEARNER = Learner(parser=SAMPLE_PARSER)  # passed to the next func
 
 @test
-def test_learner_eigenvectors(cs, cid):
+def test_learner_axes(cs, cid):
     global SAMPLE_PARSER
     global SAMPLE_USER
     global SAMPLE_LEARNER
     SAMPLE_LEARNER = Learner(parser=SAMPLE_PARSER)
-    SAMPLE_LEARNER.get_eigenvectors()
+    _ = SAMPLE_LEARNER.get_axes()
     assert len(SAMPLE_LEARNER.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
     assert not np.any(np.iscomplex(SAMPLE_LEARNER.axes)), 'Complex axes found.'
 
     l = Learner(user=SAMPLE_USER)
-    l.get_comment_eigenvectors(child_comments=True)
+    _ = l.get_comment_axes(child_comments=True)
     assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
     assert not np.any(np.iscomplex(l.axes)), 'Complex axes found.'
     l = Learner(user=SAMPLE_POST)
-    l.get_comment_eigenvectors()
+    _ = l.get_comment_axes()
     assert len(l.axes)>0 and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
     assert not np.any(np.iscomplex(l.axes)), 'Complex axes found.'
+
+@test
+def test_learner_projection(cs, cid):
+    global SAMPLE_LEARNER
+    global SAMPLE_POST
+    if SAMPLE_LEARNER.axes is None:
+        raise ValueError('Depends on learner axes test success.')
+    proj = SAMPLE_LEARNER.project(SAMPLE_POST)
+    assert len(proj)==1 and len(proj[0])==len(SAMPLE_LEARNER.axes), \
+                'Unexpected dimensions in result projections.'
+
 
 
 if __name__=='__main__':
@@ -345,7 +356,8 @@ if __name__=='__main__':
 
 #   Learner instance only
     test_learner_instance('Testing Learner class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_learner_eigenvectors('Testing eigenvector generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_learner_axes('Testing eigenvector generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_learner_projection('Testing projection to axes:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
     print('===============')
     print('Available API credits: ')

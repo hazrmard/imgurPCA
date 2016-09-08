@@ -22,6 +22,10 @@ class Post(object):
     def network(self):
         return self.get_user_ids()
 
+    @property
+    def words(self):
+        return self.wordcount['word']
+
 
     def download(self):
         """download the relevant gallery post, comments, and user data based on
@@ -116,4 +120,11 @@ class Post(object):
 
 
     def sort_by_weight(self):
-            self.wordcount.sort(order=['weight'])
+        self.wordcount.sort(order=['weight'])
+
+
+    def sort(self):
+        """sorts according to whatever default sort order is set. Default order is
+        Used by Parser.consolidate and Learner.project() functions.
+        """
+        self.wordcount.sort(order=[config.DEFAULT_SORT_ORDER])

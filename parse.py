@@ -29,7 +29,7 @@ class Parser(object):
         utils.set_up_client(self, **kwargs)
         self.items = []
         self.nthreads = nthreads
-        self.wordcount = None
+        self.wordcount = np.array([], dtype=config.DT_WORD_WEIGHT)
         self._consolidated = False      # flag to signal if all wordcounts sorted
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -50,6 +50,10 @@ class Parser(object):
         See imgur API data models for comment object attributes.
         """
         return (c.comments for c in self.items)
+
+    @property
+    def words(self):
+        return self.wordcount['word']
 
     def download(self):
         """downloads whatever items (User/Post objects) are placed in self.items
@@ -103,11 +107,11 @@ class Parser(object):
                 except KeyError:
                     word_dict[w['word']] = w['weight']
         self.wordcount = np.array(word_dict.items(), dtype=config.DT_WORD_WEIGHT)
-        self.wordcount.sort(order=['word'])
+        self.wordcount.sort(order=[config.DEFAULT_SORT_ORDER])
 
         for item in self.items:
             zero_words = np.setdiff1d(self.wordcount['word'], item.wordcount['word'], assume_unique=True)
             zero_wordcounts = np.array(zip(zero_words, np.zeros(len(zero_words))), dtype=config.DT_WORD_WEIGHT)
             item.wordcount = np.append(item.wordcount, zero_wordcounts)
-            item.sort_by_word()
+            item.sort()     # using default sort order
         self._consolidated = True
