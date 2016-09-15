@@ -277,6 +277,13 @@ def test_parser_consolidation(cs, cid):
     SAMPLE_PARSER.consolidate()
 
 @test
+def test_parser_baseline(cs, cid):
+    global SAMPLE_PARSER
+    a, v = SAMPLE_PARSER.get_baseline()
+    assert len(a)==len(SAMPLE_PARSER.words) and len(a)==len(v),\
+            'Incorrect output dimensions.'
+
+@test
 def test_parser_split(cs, cid):
     global SAMPLE_PARSER
     s1, s2 = SAMPLE_PARSER.split(0.6)
@@ -388,6 +395,7 @@ if __name__=='__main__':
     test_parser_instance('Testing Parser class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_parser_population('Testing query, post, user population:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_parser_consolidation('Testing for parser consolidation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_parser_baseline('Testing baseline generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_parser_split('Testing item splitting for test/learn:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
 #   Learner instance only

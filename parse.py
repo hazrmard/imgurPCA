@@ -129,8 +129,17 @@ class Parser(object):
         and variance of each word. This can then be used to filter out frequent
         or consistently appearing words to reduce bloat. Can only be called after
         consolidation.
+        Returns a tuple -> (average scores, variances) of 1D np arrays where
+        order corresponds to self.words.
         """
-        pass
+        if not self._consolidated:
+            raise config.PrematureFunctionCall('Consolidate Parser first.')
+        matrix = np.zeros((len(self.items), len(self.words)))
+        for i, item in enumerate(self.items):
+            matrix[i,:] = item.wordcount['weight']
+        means = np.mean(matrix, axis=0)
+        variances = np.var(matrix, axis=0)
+        return (means, variances)
 
 
     def split(self, fraction=0.5):
