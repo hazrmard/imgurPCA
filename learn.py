@@ -35,6 +35,7 @@ class Learner(object):
         self.axes = None          # np.array 2D float [len(self.words) x # of axes]
         self._custom_words = None # list of words if custom axes set, alternative
                                   # to self.source.words. Set by self.set_axes()
+        self.ccenters = None      # 2D array of cluster centers [arbitrary x # of axes]
 
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -192,8 +193,7 @@ class Learner(object):
         return np.dot(weights, self.axes)   #projection = weights . axes
 
 
-    @staticmethod
-    def k_means_cluster(projection, nclusters):     # 'sef' added by decorator
+    def k_means_cluster(self, projection, nclusters):     # 'self' added by decorator
         """using projection coordinates, group coordinates together based on
         smallest cartesian distance to cluster centers.
         @param projection (2D ndarray): a 2D numpy array with rows representing
@@ -232,4 +232,35 @@ class Learner(object):
                 if np.any(mine):
                     centers[k] = np.mean(projection[mine], axis=0)
 
+        self.ccenters = centers
         return centers, nex
+
+
+    def assign_to_cluster(self, projections, ccenters=None):
+        """given cluster center coordinates on self.axes, assign cluster to each
+        projection based on the smallest cartesian distance.
+        @param projections (ndarray): 2D numpy array of coordinates on self.axes.
+        @param ccenters (ndarray): OPTIONAL. 2D numpy array of cluster center
+                                coordinates. If not specified, result of k_means_cluster
+                                is used.
+        Returns a 1D array where each element is the index of cluster center in
+        ccenters the projection matched with.
+        """
+        if ccenters is None:
+            if self.ccenters is None:
+                raise config.PrematureFunctionCall('Specify centers or call \
+                            k_means_cluster first to compute centers.')
+            ccenters = self.ccenters
+        assignments = np.zeros(len(projections))
+        for i in range(len(projections)):
+            closest = None
+            for j in range(len(ccenters)):
+                diff = ccenters[j] - projections[i]
+                dist = np.dot(diff, diff)
+                if closest is not None:
+                    if dist < closest:
+                        assignments[i] = j
+                        closest = dist
+                else:
+                    closest = dist
+        return assignments

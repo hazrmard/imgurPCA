@@ -131,3 +131,20 @@ class Parser(object):
         consolidation.
         """
         pass
+
+
+    def split(self, fraction=0.5):
+        """split self.items into two parser instances to use as learning and
+        training data.
+        @param fraction (float): fraction of items to keep in first of 2 instances
+        Returns 2 Parser objects. NOTE: items in parser objects are references to
+        self.items. So any changes to items in self.items or in the 2 parsers
+        will be reflected.
+        """
+        samples = np.random.choice(self.items, len(self.items), replace=False)
+        n1 = np.floor(len(self.items) * fraction)
+        s1 = samples[:n1]
+        s2 = samples[n1:]
+        p1 = Parser(client=self.client, items=s1)
+        p2 = Parser(client=self.client, items=s2)
+        return p1, p2

@@ -277,6 +277,13 @@ def test_parser_consolidation(cs, cid):
     SAMPLE_PARSER.consolidate()
 
 @test
+def test_parser_split(cs, cid):
+    global SAMPLE_PARSER
+    s1, s2 = SAMPLE_PARSER.split(0.6)
+    assert len(s1.items) + len(s2.items) == len(SAMPLE_PARSER.items), \
+            'Sample sizes do not add up.'
+
+@test
 def test_learner_instance(cs, cid):
     global SAMPLE_USER
     global SAMPLE_POST
@@ -342,6 +349,11 @@ def test_learner_clustering(cs, cid):
     assert len(centers)==3 and len(assignments)==len(proj), \
             'Unequal dimensions to input data.'
 
+    centers = np.array([[1,0],[0,1],[-1,0]])
+    proj = np.array([[0.5,0],[0,0.5],[-0.1,0],[5,0]])
+    res = l.assign_to_cluster(proj, centers)
+    assert np.array_equal(res, np.array([0,1,2,0])), 'Incorrect clustering.'
+
 
 if __name__=='__main__':
     if '-n' in sys.argv:
@@ -376,6 +388,7 @@ if __name__=='__main__':
     test_parser_instance('Testing Parser class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_parser_population('Testing query, post, user population:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_parser_consolidation('Testing for parser consolidation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_parser_split('Testing item splitting for test/learn:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
 #   Learner instance only
     test_learner_instance('Testing Learner class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
