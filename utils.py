@@ -28,3 +28,11 @@ def set_up_client(instance, **kwargs):
     else:
         raise InvalidArgument('Either include client=ImgurClient()'
                             ' instance, or cid=CLIENT_ID and cs=CLIENT_SECRET')
+
+
+def num_lines(fname):
+    """returns the number of lines in a file.
+    @param fname (str): name of file
+    """
+    with open(fname, 'rb') as f:
+        return sum((1 for line in f))

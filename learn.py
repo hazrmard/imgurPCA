@@ -6,6 +6,7 @@ from parse import Parser
 import utils
 import config
 import numpy as np
+from csv import reader, writer
 
 
 class Learner(object):
@@ -28,9 +29,10 @@ class Learner(object):
             self.user = kwargs['user']
             self._stype = 'user'
         else:
-            raise AttributeError('Include parser, post, or user key/value pair.')
+            # raise AttributeError('Include parser, post, or user key/value pair.')
+            pass # for custom usage
 
-        self.axes = None          # np.array 2D [len(self.words) x # of axes]
+        self.axes = None          # np.array 2D float [len(self.words) x # of axes]
         self._custom_words = None # list of words if custom axes set, alternative
                                   # to self.source.words. Set by self.set_axes()
 
@@ -62,18 +64,23 @@ class Learner(object):
             return self._custom_words
 
 
-    def set_axes(self, axes):
+    def set_axes(self, axes, consolidated=False):
         """set custom axes for further computations. Overrides get_axes if
         used previously. Each axis is an array of words and their weights.
         @param axes (ndarray): a list/tuple/array/generator of config.DT_WORD_WEIGHT
                                 arrays. Each array represents an axis.
+        @param consolidated (bool): whether words and order in all axes is same.
         Returns 2D array (each row -> word weight in self.words, column -> axis vector)
         """
-        p = Parser(cs='bleh', cid='bleh')
-        p.items = [Post(id='bleh', cid='bleh', cs='bleh', wordcount=w) for w in axes]
-        p.consolidate()
-        self._custom_words = p.words
-        self.axes = np.vstack((a.wordcount['weight'] for a in p.items)).T
+        if not consolidated:
+            p = Parser(cs='bleh', cid='bleh')
+            p.items = [Post(id='bleh', cid='bleh', cs='bleh', wordcount=w) for w in axes]
+            p.consolidate()
+            self._custom_words = p.words
+            self.axes = np.vstack((a.wordcount['weight'] for a in p.items)).T
+        else:
+            self._custom_words = axes[0]['word']
+            self.axes = np.vstack((a['weight'] for a in axes)).T
         return self.axes
 
 
@@ -125,7 +132,33 @@ class Learner(object):
                                             # and self.get_comment_axes
             return self.axes
         else:
-            raise Exception('get_comment_eigenvectors only for Post/User objects.')
+            raise Exception('get_comment_axes only for Post/User objects.')
+
+
+    def load_axes(self, fname):
+        """load axes stored using save_axes()
+        @param fname (str): name of file containing axes
+        """
+        n = utils.num_lines(fname)
+        with open(fname, 'r') as f:
+            c = reader(f)       # csv.reader
+            words = c.next()
+            self._custom_words = np.array(words, dtype=config.DT_WORD)['word']
+            axes_t = np.zeros((n-1, len(words)), dtype=float)
+            for i, row in enumerate(c):
+                axes_t[i,:] = row
+            self.axes = axes_t.T
+
+
+    def save_axes(self, fname):
+        """save the axes in a csv file. The first row is comma-separated self.words.
+        The following rows correspond to axis vectors in self.axes (i.e. self.axes.T)
+        @param fname (str): name of file to save
+        """
+        with open(fname, 'wb') as f:
+            w = writer(f)
+            w.writerow(self.words)
+            w.writerows(self.axes.T)
 
 
     def project(self, source):
@@ -159,7 +192,8 @@ class Learner(object):
         return np.dot(weights, self.axes)   #projection = weights . axes
 
 
-    def k_means_cluster(self, projection, nclusters):
+    @staticmethod
+    def k_means_cluster(projection, nclusters):     # 'sef' added by decorator
         """using projection coordinates, group coordinates together based on
         smallest cartesian distance to cluster centers.
         @param projection (2D ndarray): a 2D numpy array with rows representing
@@ -187,6 +221,7 @@ class Learner(object):
                     dist = np.dot(diff, diff)   # squared cartesian distance
                     if closest is None:
                         closest = dist
+                        nex[i] = j
                     elif dist < closest:
                         closest = dist
                         nex[i] = j

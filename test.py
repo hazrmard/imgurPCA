@@ -282,6 +282,7 @@ def test_learner_instance(cs, cid):
     global SAMPLE_POST
     global SAMPLE_PARSER
     global SAMPLE_LEARNER
+    SAMPLE_LEARNER = ()
     SAMPLE_LEARNER = Learner(user=SAMPLE_USER)
     SAMPLE_LEARNER = Learner(user=SAMPLE_PARSER) # does not check for type, just keyword
     SAMPLE_LEARNER = Learner(parser=SAMPLE_PARSER)  # passed to the next func
@@ -315,6 +316,13 @@ def test_learner_axes(cs, cid):
     assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
 
+    l.save_axes('sample_axes.csv')
+    m = Learner()
+    m.load_axes('sample_axes.csv')
+    os.remove('sample_axes.csv')
+    assert np.array_equal(m.words, l.words), 'Loaded axes words do not match.'
+    assert np.array_equal(m.axes, l.axes), 'Loaded axes do not match'
+
 @test
 def test_learner_projection(cs, cid):
     global SAMPLE_LEARNER
@@ -327,7 +335,7 @@ def test_learner_projection(cs, cid):
 
 @test
 def test_learner_clustering(cs, cid):
-    l = Learner(parser=None)
+    l = Learner()
     proj = np.array([[1,1,1],[1,2,3],[3,0,1],[2,0,0],[0,0,1],[0,1,0],[3,2,1],
                     [0,0,0],[2,1,2],[2,2,2],[3,2,3],[3,2,0],[1,1,0],[0,0,3]])
     centers, assignments = l.k_means_cluster(proj, 3)
