@@ -9,6 +9,10 @@ class User(Post):
         """Instantiate a User object.
         @param url (str): the username of an account. It is called 'url' in the
                         API data model.
+        @param cid (string): client id, use with 'cs'
+        @param cs (string): client secret, use with 'cid'.
+        OR:
+        @param client (ImgurClient): imgurpython.ImgurClient instance
         """
         super(User, self).__init__(None, *args, **kwargs)    # id=None, to be set later
 

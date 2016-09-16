@@ -10,6 +10,10 @@ import utils
 import config
 import numpy as np
 
+# The Parser class performs operations on a collection of Post or User objects
+# stored in Parser.items. Parser can either populate posts from IDs or from a
+# Query object. In addition it performs feature selection operations on the 
+# downloaded data.
 
 class Parser(object):
 

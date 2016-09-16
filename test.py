@@ -6,6 +6,7 @@ from parse import Parser
 from learn import Learner
 from parallel import Parallel
 from query import Query
+from bot import Bot
 import utils
 import config
 from imgurpython import ImgurClient
@@ -15,6 +16,7 @@ import numpy as np
 import os
 import time
 import sys
+import requests
 
 print('\n')
 
@@ -22,6 +24,7 @@ SAMPLE_POST = None
 SAMPLE_USER = None
 SAMPLE_PARSER = None
 SAMPLE_LEARNER = None
+SAMPLE_BOT = None
 
 TESTS_PASSED = 0
 TESTS_FAILED = 0
@@ -361,6 +364,27 @@ def test_learner_clustering(cs, cid):
     res = l.assign_to_cluster(proj, centers)
     assert np.array_equal(res, np.array([0,1,2,0])), 'Incorrect clustering.'
 
+@test
+def test_bot_instance(cs, cid):
+    global SAMPLE_BOT
+    SAMPLE_BOT = Bot(cs=cs, cid=cid)
+
+@test
+def test_auth_url(cs, cid):
+    b = Bot(cs=cs, cid=cid)
+    url = b.auth_url()
+    r = requests.get(url)
+    assert r.status_code==200, 'Could not validate auth url.'
+
+@test
+def test_bot_authentication(cs, cid):
+    global SAMPLE_BOT
+    if SAMPLE_BOT is None:
+        raise Exception('Depends on Bot instance test success.')
+    SAMPLE_BOT.load_credentials('testdata' + os.sep + 'test.cred')
+    assert SAMPLE_BOT.access_token=='ACCESS TOKEN' and SAMPLE_BOT.refresh_token=='REFRESH TOKEN',\
+            'Credentials incorrrectly read.'
+
 
 if __name__=='__main__':
     if '-n' in sys.argv:
@@ -403,6 +427,11 @@ if __name__=='__main__':
     test_learner_axes('Testing eigenvector generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_learner_projection('Testing projection to axes:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_learner_clustering('Testing k-means clustering:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+
+#   Bot instance only
+    test_bot_instance('Testing Bot class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_auth_url('Testing authentication URL:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_bot_authentication('Testing Bot credentials:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
     print('===============')
     print('Available API credits: ')

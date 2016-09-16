@@ -4,9 +4,23 @@ import utils
 import config
 import numpy as np
 
+# The Post class represents a single gallery item on imgur.com. Each post is
+# identified by its 'id'. Post methods provide a way to download, cleanse, and
+# filter data into word counts. Post instances are used by the Parser class to
+# conduct comulative operations on Posts satifying some query.
+
 class Post(object):
 
     def __init__(self, id, **kwargs):
+        """
+        @param id (str): post id
+        @param cid (string): client id, use with 'cs'
+        @param cs (string): client secret, use with 'cid'.
+        OR:
+        @param client (ImgurClient): imgurpython.ImgurClient instance
+        All other attributes are optional and are set by class methods or can
+        be provided as key value arguments.
+        """
         self.id = id                    # str
         self.user = None                # account object (see imgur API data model.)
         self.comments = []              # array of comment objects (see imgur API doc.)
