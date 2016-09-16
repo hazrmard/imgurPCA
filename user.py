@@ -35,16 +35,28 @@ class User(Post):
         return self.get_post_ids()
 
 
-    def download(self):
+    def download(self, pages=0):
         """download the relevant gallery post, comments, and user data based on
         self.id.
+        @param pages (int/tuple): page number or range of pages (inclusive) to get
         """
         account_obj = self.client.get_account(self.username)
         for attr in account_obj.__dict__:
             setattr(self, attr, account_obj.__dict__[attr])
-
-        self.posts = self.client.get_account_submissions(self.username)
-        self.comments = self.client.get_account_comments(self.username)
+        self.posts = []
+        self.pages = []
+        if isinstance(pages, int):
+            pages = (pages, pages+1)
+        for i in range(*pages):
+            res = self.client.get_account_submissions(self.username, page=i)
+            if len(res)==0:
+                break
+            self.posts.extend(res)
+        for i in range(*pages):
+            res = self.client.get_account_comments(self.username, page=i)
+            if len(res)==0:
+                break
+            self.comments.extend(res)
 
 
     def get_post_ids(self):

@@ -103,7 +103,7 @@ def test_user_instance(cs, cid):
 def test_user_download(cs, cid):
     global SAMPLE_USER
     SAMPLE_USER = User('apitester', cid=cid, cs=cs)
-    SAMPLE_USER.download()
+    SAMPLE_USER.download(pages=(0,100))
     try:
         u = User('123', cs=cs, cid=cid)
         u.download()

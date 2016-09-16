@@ -12,7 +12,7 @@ import numpy as np
 
 # The Parser class performs operations on a collection of Post or User objects
 # stored in Parser.items. Parser can either populate posts from IDs or from a
-# Query object. In addition it performs feature selection operations on the 
+# Query object. In addition it performs feature selection operations on the
 # downloaded data.
 
 class Parser(object):
@@ -48,12 +48,18 @@ class Parser(object):
                                 Query.MEMES: self.client.memes_subgallery}
 
     @property
-    def comments(self):
+    def comments(self, flatten=True):
         """returns a generaor containing lists of comment objects for all items.
         [[post1.comments], [post2.comments]...[postn.comments]]
         See imgur API data models for comment object attributes.
         """
-        return (c.comments for c in self.items)
+        for item in self.items:
+            if flatten:
+                for comment, level in utils.flatten(item.comments):
+                    yield comment
+            else:
+                for comment in item.comments:
+                    yield comment
 
     @property
     def words(self):
@@ -70,12 +76,18 @@ class Parser(object):
             print('Rate limit exceeded:\n' + str(self.client.credits))
 
 
-    def get_posts(self, query):
+    def get_posts(self, query, pages=0):
         """instantiates posts to self.items.
         @param query (Query): a Query instance. See query.py.
+        @param pages (int/tuple): page number or range of pages (inclusive) to get
         """
         source_func = self._query_to_client[query.mode]
-        self.items = source_func(**query.content)
+        self.items = []
+        if isinstance(pages, int):
+            self.items.extend(source_func(page=pages, **query.content))
+        elif isinstance(pages, (tuple,list)):
+            for i in range(*pages):
+                self.items.extend(source_func(page=i, **query.content))
         self.items = [Post(client=self.client, **p.__dict__) for p in self.items]
 
 

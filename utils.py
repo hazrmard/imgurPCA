@@ -4,6 +4,7 @@ from config import InvalidArgument
 
 def flatten(container, lvl=1):
     """convert arbitrarily nested arrays of comments into a flat array
+    Acts as a generator. Returns a tuple of (comment object, level)
     """
     for i in container:
         yield (i, lvl)              # yield current comment
