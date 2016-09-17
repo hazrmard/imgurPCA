@@ -37,3 +37,13 @@ def num_lines(fname):
     """
     with open(fname, 'rb') as f:
         return sum((1 for line in f))
+
+
+def is_url(path):
+    """returns True of path starts with [http | ftp ][s]
+    @param path (str): url or file path
+    """
+    return path.startswith('http') or \
+            path.startswith('https') or \
+            path.startswith('ftp') or \
+            path.startswith('ftps')

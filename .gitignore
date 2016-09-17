@@ -62,7 +62,11 @@ target/
 *.csv
 *.pyc
 
-# sensitive data
+# sensitive data / local testing
 clientinfo.txt
 *.ps1
 myconfig.py
+my.cred
+testdata/*.png
+testdata/*.jpg
+tetdata/*.jpeg
