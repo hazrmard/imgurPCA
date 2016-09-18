@@ -381,10 +381,35 @@ def test_bot_authentication(cs, cid):
     global SAMPLE_BOT
     if SAMPLE_BOT is None:
         raise Exception('Depends on Bot instance test success.')
-    SAMPLE_BOT.load_credentials('testdata' + os.sep + 'test.cred')
+    SAMPLE_BOT.load_credentials('testdata' + os.sep + 'sample.cred')
     assert SAMPLE_BOT.access_token=='ACCESS TOKEN' and SAMPLE_BOT.refresh_token=='REFRESH TOKEN',\
             'Credentials incorrrectly read.'
+    if not os.path.exists('testdata' + os.sep + 'test.cred'):
+        print('\nNew test run detected. Go to this link to get auth pin:\n' + SAMPLE_BOT.auth_url())
+        try:
+            pin = raw_input('Enter pin: ')
+        except NameError:
+            pin = input('Enter pin: ')
+        SAMPLE_BOT.authorize(pin, credfile='testdata'+os.sep+'test.cred')
+    else:
+        SAMPLE_BOT.load_credentials('testdata'+os.sep+'test.cred')
 
+@test
+def test_bot_image_io(cs, cid):
+    global SAMPLE_BOT
+    res = SAMPLE_BOT.upload_image('testdata'+os.sep+'test.jpg', title='TEST')
+    assert res.get('title')=='TEST', 'Image not uploaded.'
+    SAMPLE_BOT.delete_image(res.get('id'))
+
+@test
+def test_bot_scheduler(cs, cid):
+    global SAMPLE_BOT
+    l = []
+    def fill(obj):
+        obj.append(1)
+    SAMPLE_BOT.every(Bot.MINUTE/60).do(fill).using([l]).until(time.time()+3).go()
+    time.sleep(3)
+    assert len(l)==2 or len(l)==3, 'Unexpected scheduler result'
 
 if __name__=='__main__':
     if '-n' in sys.argv:
@@ -432,6 +457,8 @@ if __name__=='__main__':
     test_bot_instance('Testing Bot class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_auth_url('Testing authentication URL:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_bot_authentication('Testing Bot credentials:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_bot_image_io('Testing image upload/delete:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_bot_scheduler('Testing Bot scheduler:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
     print('===============')
     print('Available API credits: ')

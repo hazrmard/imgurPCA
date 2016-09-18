@@ -4,6 +4,9 @@ import utils
 import config
 import webbrowser
 from glob import glob
+from parallel import Parallel
+import threading
+import time
 
 # The Bot class acts as a user agent. It can perform scheduled tasks when some
 # condition is met. It can also post on behalf of a user. The Bot operates in
@@ -33,6 +36,11 @@ class Bot:
         self.access_token = None
         self.refresh_token = None
         self.anon = True
+        self._interval = None   # interval in s for auto tasks
+        self._func = None       # task to perform after _interval
+        self._args = []         # list of args to be passed to _func
+        self._taskthread = None # thread spawned on Bot().go()
+        self._until = -1        # time limit on running task
 
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -96,7 +104,7 @@ class Bot:
                         in case anonymous.
         @param name (str): OPTIONAL. Name of image file.
         See ImgurClient.allowed_image_fields for allowed keywords.
-        Returns a dict containing image location, id, user data etc.
+        Returns a dict containing image location, id, title etc.
         """
         if utils.is_url(imgpath):
             res = self.client.upload_from_url(imgpath, config=kwargs, anon=self.anon)
@@ -121,6 +129,7 @@ class Bot:
 
     def create_album(self, imgids, share=False, **kwargs):
         """create an album from images already uploaded to imgur.
+        @param imgids (list/tuple): list of image ids
         """
         pass
 
@@ -157,15 +166,22 @@ class Bot:
 
 
     def every(self, interval):
-        """Specify interval for automated bot functions.
+        """Specify interval for automated bot functions. Any arithmetic combination
+        of Bot.MINUTE, Bot.HOUR, Bot.DAY, Bot.WEEK. Interval is the time between
+        when the function finishes execution and starts again.
         """
+        self._interval = interval
         return self
 
 
     def do(self, func):
-        """specify a function that the bot does every interval.
-        @param a function object
+        """specify a function that the bot does every interval. The function
+        should not return anything. And results that might be needed elsewhere
+        should assigned to one or more references passed as function arguments
+        in using().
+        @param func (function): a function object
         """
+        self._func = func
         return self
 
 
@@ -173,4 +189,36 @@ class Bot:
         """specify a list of arguments that the function in 'do' uses.
         @param args (list/tuple): a list of arguments to be passed to the funcion.
         """
+        self._args = args
         return self
+
+
+    def until(self, when):
+        """specify a time when to stop running the task. By default runs forever.
+        @param when (int): epoch time in seconds
+        """
+        self._until = when
+        return self
+
+
+    def go(self):
+        """begin scheduled task. Derives and runs Parallel instance with 1 thread.
+        """
+        class Task(Parallel):
+            def parallel_process(self, pkg, common):
+                function = common[0]
+                stop_flag = common[1]
+                interval = common[2]
+                until = common[3]
+                while not (stop_flag.is_set() or (until>0 and time.time()>=until)):
+                    function(*pkg)
+                    time.sleep(interval)
+
+        self._task = Task([self._args], nthreads=1)
+        self._task.common = [self._func, threading.Event(), self._interval, self._until]
+        self._task.start()
+
+
+    def stop(self):
+        """stop the task after it comes out of sleep for next execution"""
+        self._task.common[1].set()

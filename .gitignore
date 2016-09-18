@@ -67,6 +67,4 @@ clientinfo.txt
 *.ps1
 myconfig.py
 my.cred
-testdata/*.png
-testdata/*.jpg
-tetdata/*.jpeg
+test.cred
