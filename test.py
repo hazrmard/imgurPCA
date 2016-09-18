@@ -254,8 +254,7 @@ def test_parser_population(cs, cid):
     SAMPLE_PARSER.populate_users(userids)
 
     global SAMPLE_USER
-    postids = SAMPLE_USER.network[:5]
-    SAMPLE_PARSER.populate_posts(postids)
+    SAMPLE_PARSER.populate_posts(SAMPLE_USER.posts)
     SAMPLE_PARSER.download()
 
 @test

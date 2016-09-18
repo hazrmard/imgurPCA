@@ -20,7 +20,8 @@ class User(Post):
 
         self.url = url                      # = username
         self.reputation = 1                 # = points (alias for inheritance)
-        self.posts = []                     # list of Gallery Image/Album objects, see API
+        self.posts = []                     # list of Gallery Image/Album/GalleryAlbum objects, see API
+        self.favourites = []                # list of Gallery Image/Album/GalleryAlbum objects, see API
 
     @property
     def username(self):                     # that is what url is
@@ -36,15 +37,13 @@ class User(Post):
 
 
     def download(self, pages=0):
-        """download the relevant gallery post, comments, and user data based on
-        self.id.
+        """download the relevant gallery post, favourites, comments, and user data
+        based on self.username.
         @param pages (int/tuple): page number or range of pages (inclusive) to get
         """
         account_obj = self.client.get_account(self.username)
         for attr in account_obj.__dict__:
             setattr(self, attr, account_obj.__dict__[attr])
-        self.posts = []
-        self.pages = []
         if isinstance(pages, int):
             pages = (pages, pages+1)
         for i in range(*pages):
@@ -57,6 +56,11 @@ class User(Post):
             if len(res)==0:
                 break
             self.comments.extend(res)
+        for i in range(*pages):
+            res = self.client.get_gallery_favorites(self.username, page=i)
+            if len(res)==0:
+                break
+            self.favourites.extend(res)
 
 
     def get_post_ids(self):

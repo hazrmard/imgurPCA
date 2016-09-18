@@ -1,6 +1,10 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from imgurpython import ImgurClient
+from imgurpython.imgur.models.image import Image
+from imgurpython.imgur.models.album import Album
+from imgurpython.imgur.models.gallery_album import GalleryAlbum
+from imgurpython.imgur.models.account import Account
 from imgurpython.helpers.error import ImgurClientRateLimitError, ImgurClientError
 from post import Post
 from user import User
@@ -94,15 +98,23 @@ class Parser(object):
     def populate_posts(self, posts):
         """instantiate Post objects to self.items given post ids
         @param posts (list): a collection of post ids to download
+                        OR a collection of imgurpython Image/Album class objects
         """
-        self.items = [Post(client=self.client, id=p) for p in posts]
+        if isinstance(posts[0], (Image, Album, GalleryAlbum)):
+            self.items = [Post(client=self.client, **p.__dict__) for p in posts]
+        else:
+            self.items = [Post(client=self.client, id=p) for p in posts]
 
 
     def populate_users(self, users):
         """instantiate User objects to self.items, given post ids
         @param users (list): a collection of user ids (usernames) to download
+                        OR a collection of imgurpython Account class objects
         """
-        self.items = [User(client=self.client, url=u) for u in users]
+        if isinstance(users[0], Account):
+            self.items = [User(client=self.client, **u.__dict__) for u in users]
+        else:
+            self.items = [User(client=self.client, url=u) for u in users]
 
 
     def consolidate(self, words=None):

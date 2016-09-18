@@ -69,7 +69,8 @@ class Bot:
 
 
     def authorize(self, pin, credfile=None):
-        """get access and refresh tokens using the pin obtained from get_auth_url
+        """get access and refresh tokens using the pin obtained from get_auth_url.
+        This Authenticates the Bot.
         @param pin (str): the pin obtained from going to auth url
         @param credfile (str): OPTIONAL. name of file to store tokens into
         """
