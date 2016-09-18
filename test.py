@@ -358,10 +358,27 @@ def test_learner_clustering(cs, cid):
     assert len(centers)==3 and len(assignments)==len(proj), \
             'Unequal dimensions to input data.'
 
+    proj = np.arange(10)
+    centers, assignments = l.k_means_cluster(proj, 3)
+    assert len(centers)==3 and len(assignments)==len(proj), \
+            'Unequal dimensions to input data.'
+
     centers = np.array([[1,0],[0,1],[-1,0]])
     proj = np.array([[0.5,0],[0,0.5],[-0.1,0],[5,0]])
     res = l.assign_to_cluster(proj, centers)
     assert np.array_equal(res, np.array([0,1,2,0])), 'Incorrect clustering.'
+
+@test
+def test_learner_regression(cs, cid):
+    l = Learner()
+    projections = np.array([1,2,3])
+    predictions = np.array([2,4,6])
+    res = l.linear_regression(projections, predictions)
+    assert len(res)==2, 'Unexpected result dimensions'
+    projections = np.array([[1,2,3],[5,4,6]])
+    predictions = np.array([6, 15])
+    res = l.linear_regression(projections, predictions)
+    assert len(res)==4, 'Unexpected result dimensions'
 
 @test
 def test_bot_instance(cs, cid):
@@ -451,6 +468,7 @@ if __name__=='__main__':
     test_learner_axes('Testing eigenvector generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_learner_projection('Testing projection to axes:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_learner_clustering('Testing k-means clustering:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_learner_regression('Testing linear regression:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
 #   Bot instance only
     test_bot_instance('Testing Bot class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)

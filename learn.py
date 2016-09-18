@@ -193,10 +193,10 @@ class Learner(object):
         return np.dot(weights, self.axes)   #projection = weights . axes
 
 
-    def k_means_cluster(self, projection, nclusters):     # 'self' added by decorator
+    def k_means_cluster(self, projections, nclusters):     # 'self' added by decorator
         """using projection coordinates, group coordinates together based on
         smallest cartesian distance to cluster centers.
-        @param projection (2D ndarray): a 2D numpy array with rows representing
+        @param projections (2D ndarray): a 2D numpy array with rows representing
                                     coordinates on self.axes
         @param nclusters (int): number of clusters to create
         Returns a tuple. First element is a 2D numpy array with each row -> cluster
@@ -206,18 +206,21 @@ class Learner(object):
         cluster indices in 1st element. Order corresponds to elements in
         projection argument.
         """
-        pmax = np.amax(projection)  # get bounding box for cluster centers
-        pmin = np.amin(projection)
-        centers = np.random.randint(pmin, pmax, size=(nclusters, len(projection[0]))) # allocate memory
-        pre = np.zeros(len(projection))
-        nex = np.ones(len(projection))
+        pmax = np.amax(projections)  # get bounding box for cluster centers
+        pmin = np.amin(projections)
+        if len(projections.shape)==1:   # accounting for 1D projections if passed
+            centers = np.random.randint(pmin, pmax, size=(nclusters, len(projections)))
+        else:
+            centers = np.random.randint(pmin, pmax, size=(nclusters, len(projections[0]))) # allocate memory
+        pre = np.zeros(len(projections))
+        nex = np.ones(len(projections))
         while not np.array_equal(pre, nex):
             pre = nex
             # calculate new assignments based on centers
-            for i in range(len(projection)):
+            for i in range(len(projections)):
                 closest = None
                 for j in range(len(centers)):
-                    diff = projection[i] - centers[j]
+                    diff = projections[i] - centers[j]
                     dist = np.dot(diff, diff)   # squared cartesian distance
                     if closest is None:
                         closest = dist
@@ -230,7 +233,7 @@ class Learner(object):
             for k in range(len(centers)):
                 mine = nex==k
                 if np.any(mine):
-                    centers[k] = np.mean(projection[mine], axis=0)
+                    centers[k] = np.mean(projections[mine], axis=0)
 
         self.ccenters = centers
         return centers, nex
@@ -264,3 +267,20 @@ class Learner(object):
                 else:
                     closest = dist
         return assignments
+
+
+    def linear_regression(self, projections, predictions):
+        """multiple linear regression. Fits projections and predictions on a plane
+        using least squares fit.
+        @param projections (ndarray): 2D numpy array of coordinates. Each row is
+                                    one coordinate. Each column is an axis.
+                                    [[x1, x2,...], [x1, x2,...],...]
+        @param predictions (ndarray): 1D numpy array of predictions. [1 x predictions]
+        Returns a 1D numpy array [1 + # of axes] corresponding to coefficients
+        of the plane equation prediction = a0 + a1.x1 + a2.x2 +...
+        """
+        if len(projections.shape)==1:   # accounting for 1D projections if passed
+            coefficients = np.vstack((np.ones(len(projections)), projections)).T
+        else:
+            coefficients = np.vstack((np.ones(projections.shape[0]), projections.T)).T
+        return np.linalg.lstsq(coefficients, predictions)[0]
