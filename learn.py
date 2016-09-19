@@ -36,6 +36,10 @@ class Learner(object):
         self._custom_words = None # list of words if custom axes set, alternative
                                   # to self.source.words. Set by self.set_axes()
         self.ccenters = None      # 2D array of cluster centers [arbitrary x # of axes]
+        self.lrc = None           # linear regression coefficients 1D array of a's in:
+                                  # a0 + a1.x1 + a2.x2+...
+        self.lrf = None           # logistic regression function, result of
+                                  # Learner.logistic_regression()
 
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -197,7 +201,8 @@ class Learner(object):
         """using projection coordinates, group coordinates together based on
         smallest cartesian distance to cluster centers.
         @param projections (2D ndarray): a 2D numpy array with rows representing
-                                    coordinates on self.axes
+                                    coordinates on self.axes. If 1D array, each
+                                    element is considered a separate coordinate.
         @param nclusters (int): number of clusters to create
         Returns a tuple. First element is a 2D numpy array with each row -> cluster
         center coordinate (len==# of axes).
@@ -209,9 +214,8 @@ class Learner(object):
         pmax = np.amax(projections)  # get bounding box for cluster centers
         pmin = np.amin(projections)
         if len(projections.shape)==1:   # accounting for 1D projections if passed
-            centers = np.random.randint(pmin, pmax, size=(nclusters, len(projections)))
-        else:
-            centers = np.random.randint(pmin, pmax, size=(nclusters, len(projections[0]))) # allocate memory
+            projections = projections.reshape((1,-1)).T
+        centers = np.random.randint(pmin, pmax, size=(nclusters, len(projections[0]))) # allocate memory
         pre = np.zeros(len(projections))
         nex = np.ones(len(projections))
         while not np.array_equal(pre, nex):
@@ -243,6 +247,7 @@ class Learner(object):
         """given cluster center coordinates on self.axes, assign cluster to each
         projection based on the smallest cartesian distance.
         @param projections (ndarray): 2D numpy array of coordinates on self.axes.
+                                    If 1D, each element is a separate coordinate.
         @param ccenters (ndarray): OPTIONAL. 2D numpy array of cluster center
                                 coordinates. If not specified, result of k_means_cluster
                                 is used.
@@ -254,6 +259,8 @@ class Learner(object):
                 raise config.PrematureFunctionCall('Specify centers or call \
                             k_means_cluster first to compute centers.')
             ccenters = self.ccenters
+        if len(projections.shape)==1:
+            projections = projections.reshape((1,-1))
         assignments = np.zeros(len(projections))
         for i in range(len(projections)):
             closest = None
@@ -269,18 +276,82 @@ class Learner(object):
         return assignments
 
 
-    def linear_regression(self, projections, predictions):
+    def linear_regression(self, projections, predictions, store=True):
         """multiple linear regression. Fits projections and predictions on a plane
         using least squares fit.
         @param projections (ndarray): 2D numpy array of coordinates. Each row is
                                     one coordinate. Each column is an axis.
                                     [[x1, x2,...], [x1, x2,...],...]
+                                    If 1D, each element is a separate coordinate.
         @param predictions (ndarray): 1D numpy array of predictions. [1 x predictions]
+        @param store (bool): whether to store results in self.lrc for later use.
         Returns a 1D numpy array [1 + # of axes] corresponding to coefficients
         of the plane equation prediction = a0 + a1.x1 + a2.x2 +...
         """
         if len(projections.shape)==1:   # accounting for 1D projections if passed
-            coefficients = np.vstack((np.ones(len(projections)), projections)).T
-        else:
-            coefficients = np.vstack((np.ones(projections.shape[0]), projections.T)).T
-        return np.linalg.lstsq(coefficients, predictions)[0]
+            projections = projections.reshape((1,-1)).T
+        coefficients = np.vstack((np.ones(projections.shape[0]), projections.T)).T
+        res =  np.linalg.lstsq(coefficients, predictions)[0]
+        if store:
+            self.lrc = res
+        return res
+
+
+    def linear_prediction(self, projections, coefficients=None):
+        """given linear regression coefficients, calculate the predictions based
+        on the projections.
+        @param projections (ndarray): a 2D numpy array of n coordinates [n x dimensions].
+                                    If 1D, each element is a separate coordinate.
+        @param coeffieients (ndarray): OPTIONAL. a 1D array of dimensions+1 coeffienents:
+                                    [a0, a1, a2,...], a0 is intercept/bias
+        Returns a 1D array of predictions in the same order as projections.
+        """
+        if coefficients is None:
+            if self.lrc is None:
+                raise config.PrematureFunctionCall('Specify coefficients of \
+                                call linear_regression() first.')
+            coefficients = self.lrc
+        if len(projections.shape)==1:
+            projections = projections.reshape((1,-1)).T
+        return coefficients[0] + np.dot(coefficients[1:], projections.T)
+
+
+    def logistic_regression(self, projections, labels):
+        """perform logistic regression on projections and their binary labels.
+        @param projections (ndarray): a 2D numpy array of n coordinates [n x dimensions].
+                                    If 1D, each element is a separate coordinate.
+        @param labels (ndarray): a 1D numpy array of n 0/1 labels for each projection.
+        Returns a function that when passed a single projection (1D array) returns
+        a 1 or 0 label.
+        """
+        c = self.linear_regression(projections, labels, False)  # coefficients
+        def r(proj):
+            if isinstance(proj, (int, float)):
+                proj = np.array(proj)
+            y = c[0] + np.dot(proj, c[1:])
+            z = 1 / (1 + np.exp(-y))
+            return 1 if z>=0.5 else 0
+        self.lrf = r
+        return r
+
+
+    def logistic_prediction(self, projections, rfunc=None):
+        """compute the labels for each projection based on logistic regression
+        function.
+        @param projections (ndarray): a 2D numpy array of n coordinates [n x dimensions].
+                                    If 1D, each element is a separate coordinate.
+        @param rfunc (function): OPTIONAL. a function that takes a single element
+                                in projections and returns a label.
+        Returns a 1D numpy array of binary labels in the same order as projections.
+        """
+        if rfunc is None:
+            if self.lrf is None:
+                raise config.PrematureFunctionCall('Specify rfunc or call linear\
+                            _regression() first.')
+            rfunc = self.lrf
+        if len(projections.shape)==1:
+            projections = projections.reshape((1,-1)).T
+        labels = np.zeros(len(projections))
+        for i in range(len(labels)):
+            labels[i] = rfunc(projections[i])
+        return labels

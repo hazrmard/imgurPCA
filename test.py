@@ -379,6 +379,18 @@ def test_learner_regression(cs, cid):
     predictions = np.array([6, 15])
     res = l.linear_regression(projections, predictions)
     assert len(res)==4, 'Unexpected result dimensions'
+    res2 = l.linear_prediction(np.array([[3,4,5]]))
+    assert len(res2)==1 and res[0]+(3*res[1]+4*res[2]+5*res[3])==res2[0], \
+                'Incorrect regression prediction.'
+
+    proj = np.arange(10).reshape((5,2))
+    lbl = np.array([0,0,0,1,1])
+    res = l.logistic_regression(proj, lbl)
+    assert res(np.array([0,1])) in [0,1], 'Wrong regression function.'
+    proj = np.random.randint(0,100,size=(3,2))
+    res = l.logistic_prediction(proj)
+    assert len(res)==len(proj) and max(res)<=1 and min(res)>=0, \
+            'Wrong regression prediction.'
 
 @test
 def test_bot_instance(cs, cid):
