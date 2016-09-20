@@ -4,6 +4,10 @@ from imgurpca.post import Post
 import imgurpca.utils as utils
 import imgurpca.config as config
 
+# User is a subclass of Post which represents comments made by an imgur user.
+# Each user is identified by the url attribute (alias: username) which must be
+# provided at intantiation along with client/id and secret.
+
 class User(Post):
 
     def __init__(self, url, *args, **kwargs):

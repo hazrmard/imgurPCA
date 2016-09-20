@@ -30,9 +30,13 @@ class Post(Atomic):
         utils.set_up_client(self, **kwargs)
         super(Post, self).__init__(**kwargs)
 
-    @property
+    @property                           # list of users associated with post
     def network(self):
         return self.get_user_ids()
+
+    @property                           # reference to data source for wordcount
+    def content(self):
+        return self.comments
 
 
     def download(self):
@@ -80,9 +84,9 @@ class Post(Atomic):
         """
         words = {}
         if child_comments:
-            iterable = utils.flatten(self.comments)
+            iterable = utils.flatten(self.content)
         else:
-            iterable = zip(self.comments, [1]*len(self.comments))
+            iterable = zip(self.content, [1]*len(self.content))
 
         for c in iterable:      # c => (comment, nest level)
             vote = c[0].points if comment_votes else 1

@@ -4,11 +4,15 @@ from imgurpca import utils
 from imgurpca import config
 import numpy as np
 
+# Atomic is the base class that represents a single data point for learning
+# purposes. It is useful when it is derived (see Post and User classes). All
+# methods with a 'pass' in their bodies need to be overwritten for full
+# compatibility.
 
 class Atomic(object):
 
     def __init__(self, **kwargs):
-        self.wordcount = None
+        self.wordcount = None       # np array of dtype=config.DT_WORD_WEIGHT
         self.word_weight = config.DEFAULT_WORD_WEIGHT
 
         for attr in kwargs:
@@ -22,12 +26,20 @@ class Atomic(object):
     def weights(self):
         return self.wordcount['weight']
 
+    @property
+    def content(self):
+        # return list/generator of source[s] of self.wordcount
+        pass
+
 
     def download(self):
+        # function that populates whatever is it self.content returns
         pass
 
 
     def generate_word_counts(self):
+        # populate self.wordcount with a np array of dtype=config.DT_WORD_WEIGHT
+        # using self.content
         pass
 
 

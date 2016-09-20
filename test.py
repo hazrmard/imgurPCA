@@ -245,7 +245,7 @@ def test_parser_population(cs, cid):
     global SAMPLE_PARSER
     SAMPLE_PARSER = Parser(cid=cid, cs=cs)
     q = Query(Query.GALLERY_USER).construct()
-    SAMPLE_PARSER.get_posts(q)                          # get Post objects from query
+    SAMPLE_PARSER.get(q)                          # get Post objects from query
     assert len(SAMPLE_PARSER.items)>0, 'Query result of size 0.'
 
     global SAMPLE_POST
@@ -288,7 +288,7 @@ def test_parser_baseline(cs, cid):
 def test_parser_split(cs, cid):
     global SAMPLE_PARSER
     s1, s2 = SAMPLE_PARSER.split(0.6)
-    assert len(s1.items) + len(s2.items) == len(SAMPLE_PARSER.items), \
+    assert len(s1) + len(s2) == len(SAMPLE_PARSER.items), \
             'Sample sizes do not add up.'
 
 @test
