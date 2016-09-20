@@ -331,6 +331,10 @@ def test_learner_axes(cs, cid):
     _ = l.set_axes(axes=[myax1, myax2])
     assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
+    p = Post(cs='asd', cid='asd', id='asd', wordcount=myax1)
+    proj = l.project(p)
+    assert len(proj[0,:])==len(l.axes[0,:]), 'Invalid projection to axes.'
+    assert np.array_equal(proj[0,:], np.array([14,10])), 'Incorrect projection value.'
 
     l.save_axes('sample_axes.csv')
     m = Learner()
