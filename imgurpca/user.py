@@ -1,7 +1,8 @@
 from __future__ import unicode_literals
-from post import Post
-import utils
-import config
+from __future__ import absolute_import
+from imgurpca.post import Post
+import imgurpca.utils as utils
+import imgurpca.config as config
 
 class User(Post):
 

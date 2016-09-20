@@ -1,10 +1,11 @@
 from __future__ import print_function
 from __future__ import unicode_literals
-from post import Post
-from user import User
-from parse import Parser
-import utils
-import config
+from __future__ import absolute_import
+from imgurpca.post import Post
+from imgurpca.user import User
+from imgurpca.parse import Parser
+import imgurpca.utils as utils
+import imgurpca.config as config
 import numpy as np
 from csv import reader, writer
 
@@ -327,7 +328,7 @@ class Learner(object):
         c = self.linear_regression(projections, labels, False)  # coefficients
         def r(proj):
             if isinstance(proj, (int, float)):
-                proj = np.array(proj)
+                proj = np.array([proj])
             y = c[0] + np.dot(proj, c[1:])
             z = 1 / (1 + np.exp(-y))
             return 1 if z>=0.5 else 0

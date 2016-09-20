@@ -1,17 +1,18 @@
 from __future__ import print_function
 from __future__ import unicode_literals
+from __future__ import absolute_import
 from imgurpython import ImgurClient
 from imgurpython.imgur.models.image import Image
 from imgurpython.imgur.models.album import Album
 from imgurpython.imgur.models.gallery_album import GalleryAlbum
 from imgurpython.imgur.models.account import Account
 from imgurpython.helpers.error import ImgurClientRateLimitError, ImgurClientError
-from post import Post
-from user import User
-from query import Query
-from parallel import Parallel
-import utils
-import config
+from imgurpca.post import Post
+from imgurpca.user import User
+from imgurpca.query import Query
+from imgurpca.parallel import Parallel
+import imgurpca.utils as utils
+import imgurpca.config as config
 import numpy as np
 
 # The Parser class performs operations on a collection of Post or User objects

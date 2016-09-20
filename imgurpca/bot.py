@@ -1,10 +1,11 @@
 from __future__ import print_function
 from __future__ import unicode_literals
-import utils
-import config
+from __future__ import absolute_import
+import imgurpca.utils as utils
+import imgurpca.config as config
+from imgurpca.parallel import Parallel
 import webbrowser
 from glob import glob
-from parallel import Parallel
 import threading
 import time
 

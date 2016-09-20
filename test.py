@@ -1,14 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
-from post import Post
-from user import User
-from parse import Parser
-from learn import Learner
-from parallel import Parallel
-from query import Query
-from bot import Bot
-import utils
-import config
+from __future__ import absolute_import
+from imgurpca import *
 from imgurpython import ImgurClient
 from imgurpython.helpers.error import ImgurClientError
 import pickle
@@ -131,6 +124,12 @@ def test_structure_flattening(cs, cid):
         n+=1
     if n!=54:
         raise ValueError('Comment object incorrectly flattened.')
+    l = [[1,2,[3,[4,5]]],6,7,[8,9,[10]]]
+    n=0
+    for i in utils.flatten(l, accessor=lambda x: x):
+        n+=1
+        assert n==i[0], 'Incorrect result from flattened generator.'
+    assert n==10, 'Nested list incorrectly flattened.'
 
 @test
 def test_sentence_sanitation(cs, cid):

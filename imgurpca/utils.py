@@ -1,15 +1,19 @@
 from __future__ import unicode_literals
+from __future__ import absolute_import
 from imgurpython import ImgurClient
-from config import InvalidArgument
+from imgurpca.config import InvalidArgument
 
-def flatten(container, lvl=1):
+def flatten(container, lvl=1, accessor=lambda x: x.children):
     """convert arbitrarily nested arrays of comments into a flat array
     Acts as a generator. Returns a tuple of (comment object, level)
+    @param accessor (func): OPTIONAL. Returns a reference to nested elements.
+    @param lvl (int): nesting level. 1 is top level. Do not change when calling.
     """
     for i in container:
-        yield (i, lvl)              # yield current comment
-        if isinstance(i.children, (list,tuple)) and i.children:
-            for j in flatten(i.children, lvl+1):
+        if not isinstance(i, (list,tuple)):
+            yield (i, lvl)              # yield current comment
+        if isinstance(accessor(i), (list,tuple)) and accessor(i):
+            for j in flatten(accessor(i), lvl+1, accessor):
                 yield j             # yield flattened out children
 
 
