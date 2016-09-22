@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from imgurpython import ImgurClient
-from imgurpca.config import InvalidArgument
+from imgurpca.base import config
 
 def flatten(container, lvl=1, accessor=lambda x: x.children):
     """convert arbitrarily nested arrays of comments into a flat array
@@ -23,16 +23,6 @@ def sanitize(sentence):
     sentence = sentence.lower() # to lower case
     words = sentence.split()    # split on whitespace
     return words
-
-
-def set_up_client(instance, **kwargs):
-    if 'cid' in kwargs and 'cs' in kwargs:
-        instance.client = ImgurClient(kwargs['cid'], kwargs['cs'])
-    elif 'client' in kwargs:
-        instance.client = kwargs['client']
-    else:
-        raise InvalidArgument('Either include client=ImgurClient()'
-                            ' instance, or cid=CLIENT_ID and cs=CLIENT_SECRET')
 
 
 def num_lines(fname):

@@ -1,9 +1,10 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
-import imgurpca.utils as utils
-import imgurpca.config as config
-from imgurpca.parallel import Parallel
+from imgurpca import utils
+from imgurpca import config
+from imgurpca.base import Electronic
+from imgurpca import imutils
 import webbrowser
 from glob import glob
 import threading
@@ -14,13 +15,9 @@ import time
 # 2 modes: Authenticated and Anonymous. If credentials are loaded or obtained
 # using pin authorization, then Bot is Authenticated. Bot exposes the entire
 # API of imgurpython through Bot.client which is an ImgurClient instance.
+# Bot is subclassed from Electronic.
 
-class Bot:
-
-    MINUTE = 60
-    HOUR = 3600
-    DAY = 86400
-    WEEK = 604800
+class Bot(Electronic):
 
     def __init__(self, *args, **kwargs):
         """
@@ -33,21 +30,15 @@ class Bot:
         If refresh_token and access_token are included in keyword arguments,
         Bot is automatically Authenticated.
         """
-        utils.set_up_client(self, **kwargs)
         self.access_token = None
         self.refresh_token = None
         self.anon = True
-        self._interval = None   # interval in s for auto tasks
-        self._func = None       # task to perform after _interval
-        self._args = []         # list of args to be passed to _func
-        self._taskthread = None # thread spawned on Bot().go()
-        self._until = -1        # time limit on running task
-
-        for attr in kwargs:
-            setattr(self, attr, kwargs[attr])
 
         if ('access_token' in kwargs) and ('refresh_token' in kwargs):
             self._authenticate(self.access_token, self.refresh_token)
+
+        imutils.set_up_client(self, **kwargs)
+        super(Bot, self).__init__(**kwargs)
 
 
     def _authenticate(self, access_token, refresh_token):
@@ -165,62 +156,3 @@ class Bot:
         @param itemid (str): id of item.
         """
         self._vote(itemid, 'down')
-
-
-    def every(self, interval):
-        """Specify interval for automated bot functions. Any arithmetic combination
-        of Bot.MINUTE, Bot.HOUR, Bot.DAY, Bot.WEEK. Interval is the time between
-        when the function finishes execution and starts again.
-        """
-        self._interval = interval
-        return self
-
-
-    def do(self, func):
-        """specify a function that the bot does every interval. The function
-        should not return anything. And results that might be needed elsewhere
-        should assigned to one or more references passed as function arguments
-        in using().
-        @param func (function): a function object
-        """
-        self._func = func
-        return self
-
-
-    def using(self, args):
-        """specify a list of arguments that the function in 'do' uses.
-        @param args (list/tuple): a list of arguments to be passed to the funcion.
-        """
-        self._args = args
-        return self
-
-
-    def until(self, when):
-        """specify a time when to stop running the task. By default runs forever.
-        @param when (int): epoch time in seconds
-        """
-        self._until = when
-        return self
-
-
-    def go(self):
-        """begin scheduled task. Derives and runs Parallel instance with 1 thread.
-        """
-        class Task(Parallel):
-            def parallel_process(self, pkg, common):
-                function = common[0]
-                stop_flag = common[1]
-                interval = common[2]
-                until = common[3]
-                while not (stop_flag.is_set() or (until>0 and time.time()>=until)):
-                    function(*pkg)
-                    time.sleep(interval)
-
-        self._task = Task([self._args], nthreads=1)
-        self._task.common = [self._func, threading.Event(), self._interval, self._until]
-        self._task.start()
-
-
-    def stop(self):
-        """stop the task after it comes out of sleep for next execution"""
-        self._task.common[1].set()

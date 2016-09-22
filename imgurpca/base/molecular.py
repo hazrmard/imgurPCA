@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpca import utils
-from imgurpca import config
-from imgurpca.parallel import Parallel
+from imgurpca.base import utils
+from imgurpca.base import config
+from imgurpca.base import Parallel
 import numpy as np
 
 

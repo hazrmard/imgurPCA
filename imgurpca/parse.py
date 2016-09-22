@@ -1,19 +1,18 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpython import ImgurClient
 from imgurpython.imgur.models.image import Image
 from imgurpython.imgur.models.album import Album
 from imgurpython.imgur.models.gallery_album import GalleryAlbum
 from imgurpython.imgur.models.account import Account
 from imgurpython.helpers.error import ImgurClientRateLimitError, ImgurClientError
-from imgurpca.post import Post
-from imgurpca.user import User
-from imgurpca.query import Query
-from imgurpca.parallel import Parallel
+from imgurpca import Post
+from imgurpca import User
+from imgurpca import Query
+from imgurpca import imutils
 from imgurpca.base import Molecular
-import imgurpca.utils as utils
-import imgurpca.config as config
+from imgurpca import utils
+from imgurpca import config
 import numpy as np
 
 # The Parser class performs operations on a collection of Post or User objects
@@ -34,7 +33,7 @@ class Parser(Molecular):
         OR:
         @param client (ImgurClient): imgurpython.ImgurClient instance
         """
-        utils.set_up_client(self, **kwargs)
+        imutils.set_up_client(self, **kwargs)
         super(Parser, self).__init__(**kwargs)
 
         self._query_to_client = {Query.GALLERY_TOP: self.client.gallery,

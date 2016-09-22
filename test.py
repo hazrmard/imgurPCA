@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from imgurpca import *
+from imgurpca.base import Parallel
 from imgurpython import ImgurClient
 from imgurpython.helpers.error import ImgurClientError
 import pickle
@@ -10,8 +11,6 @@ import os
 import time
 import sys
 import requests
-
-print('\n')
 
 SAMPLE_POST = None
 SAMPLE_USER = None
@@ -307,19 +306,19 @@ def test_learner_axes(cs, cid):
     global SAMPLE_PARSER
     global SAMPLE_USER
     global SAMPLE_LEARNER
-    SAMPLE_LEARNER = Learner(parser=SAMPLE_PARSER)
+    SAMPLE_LEARNER = Learner(source=SAMPLE_PARSER)
     _ = SAMPLE_LEARNER.get_axes()
     assert len(SAMPLE_LEARNER.axes)==len(SAMPLE_LEARNER.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
     assert not np.any(np.iscomplex(SAMPLE_LEARNER.axes)), 'Complex axes found.'
 
-    l = Learner(user=SAMPLE_USER)
+    l = Learner(source=SAMPLE_USER)
     _ = l.get_comment_axes(child_comments=True)
     assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
     assert not np.any(np.iscomplex(l.axes)), 'Complex axes found.'
 
-    l = Learner(user=SAMPLE_POST)
+    l = Learner(source=SAMPLE_POST)
     _ = l.get_comment_axes()
     assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
@@ -443,6 +442,7 @@ def test_bot_scheduler(cs, cid):
     assert len(l)==2 or len(l)==3, 'Unexpected scheduler result'
 
 if __name__=='__main__':
+    print('\n')
     if '-n' in sys.argv:
         get_test_data(cs=CLIENT_SECRET, cid=CLIENT_ID)
 

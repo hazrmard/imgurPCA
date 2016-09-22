@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpca import utils
-from imgurpca import config
+from imgurpca.base import utils
+from imgurpca.base import config
 import numpy as np
 
 # Atomic is the base class that represents a single data point for learning
@@ -14,6 +14,7 @@ class Atomic(object):
     def __init__(self, **kwargs):
         self.wordcount = None       # np array of dtype=config.DT_WORD_WEIGHT
         self.word_weight = config.DEFAULT_WORD_WEIGHT
+        self._content = None
 
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -30,6 +31,7 @@ class Atomic(object):
     def content(self):
         # return list/generator of source[s] of self.wordcount
         pass
+        return self._content
 
 
     def download(self):

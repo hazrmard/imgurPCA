@@ -1,9 +1,11 @@
-from imgurpca.bot import Bot
-from imgurpca.learn import Learner
-from imgurpca.parallel import Parallel
-from imgurpca.parse import Parser
+from __future__ import absolute_import
+
+# only import things that will be exposed in the main API
+from imgurpca.base import utils
+from imgurpca.base import config
+from imgurpca.query import Query
 from imgurpca.post import Post
 from imgurpca.user import User
-from imgurpca.query import Query
-import imgurpca.utils as utils
-import imgurpca.config as config
+from imgurpca.parse import Parser
+from imgurpca.learn import Learner
+from imgurpca.bot import Bot

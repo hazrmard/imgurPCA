@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpython import ImgurClient
-import imgurpca.utils as utils
-import imgurpca.config as config
+from imgurpca import utils
+from imgurpca import config
+from imgurpca import imutils
 from imgurpca.base import Atomic
 import numpy as np
 
@@ -27,7 +27,7 @@ class Post(Atomic):
         self.user = None                # account object (see imgur API data model.)
         self.comments = []              # array of comment objects (see imgur API doc.)
 
-        utils.set_up_client(self, **kwargs)
+        imutils.set_up_client(self, **kwargs)
         super(Post, self).__init__(**kwargs)
 
     @property                           # list of users associated with post
