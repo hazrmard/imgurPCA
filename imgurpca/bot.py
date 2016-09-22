@@ -15,7 +15,7 @@ import time
 # 2 modes: Authenticated and Anonymous. If credentials are loaded or obtained
 # using pin authorization, then Bot is Authenticated. Bot exposes the entire
 # API of imgurpython through Bot.client which is an ImgurClient instance.
-# Bot is subclassed from Electronic.
+# Bot is subclassed from base.Electronic.
 
 class Bot(Electronic):
 
@@ -104,9 +104,7 @@ class Bot(Electronic):
         else:
             res = self.client.upload_from_path(imgpath, config=kwargs, anon=self.anon)
         if share:
-            if self.anon:
-                raise config.PrematureFunctionCall('Authenticate Bot first.')
-            self.client.share_on_imgur(res['id'], res['title'])
+            self.share(res['id'], res['title'])
             res['in_gallery'] = True
         return res
 
@@ -137,6 +135,15 @@ class Bot(Electronic):
         """
         self.client.remove_from_gallery(itemid)
 
+    def share(self, itemid, title=''):
+        """put the image on imgur gallery
+        @param itemid (str): ID of image/album
+        @param title (str): Title under which to share
+        """
+        if self.anon:
+            raise config.PrematureFunctionCall('Authenticate Bot first.')
+        self.client.share_on_imgur(itemid, title)
+
 
     def _vote(itemid, what):
         if self.anon:
@@ -156,3 +163,21 @@ class Bot(Electronic):
         @param itemid (str): id of item.
         """
         self._vote(itemid, 'down')
+
+
+    def get_notifications(self, new=True, markread=True):
+        """get a list of notification objects for the current account.
+        Requires authentication.
+        @param new (bool): only get unread notifications
+        @param markread (bool): mark downloaded notifications as read
+        Returns a dictionary with keys 'messages' and 'replies'. Messages and
+        replies are of the notification data model. Notification.content is
+        a comment object for replies and a message object for messages.
+        """
+        if self.anon:
+            raise config.PrematureFunctionCall('Authenticate Bot first.')
+        res = self.client.get_notifications(new=new)
+        if len(res) and markread:
+            ids = [n.id for n in res['replies'] + res['messages']]
+            self.client.mark_notifications_as_read(ids)
+        return res

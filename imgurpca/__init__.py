@@ -9,3 +9,4 @@ from imgurpca.user import User
 from imgurpca.parse import Parser
 from imgurpca.learn import Learner
 from imgurpca.bot import Bot
+from imgurpca import macros

@@ -8,6 +8,11 @@ from imgurpca.base import config
 import numpy as np
 from csv import reader, writer
 
+# BaseLearner provides functions that generate axes to describe data points and
+# perform further analyses. Axes are generated from the source which is a Molecular
+# subclass. They can also be saved to and loaded from file, or set programmatically.
+# The class does principal component analysis, linear and logistic regression and
+# prediction, and k-means clustering.
 
 class BaseLearner(object):
 

@@ -5,6 +5,10 @@ from imgurpca.base import config
 from imgurpca.base import Parallel
 import numpy as np
 
+# The Molecular class (as in: a collection of atoms) is a container class for
+# Atomic subclasses. It can perform cumulative filtration and feature selection
+# functions. Atomic objects are stored in Molecular.atoms. The get() method should
+# be overwritten in case the sources can be obtained through an API (see Parser)
 
 class Molecular(object):
 
@@ -14,7 +18,7 @@ class Molecular(object):
 
 
     def __init__(self, **kwargs):
-        self.items = []
+        self.items = []                 # a list of Atomic subclassed objects
         self.nthreads = 1
         self.wordcount = None
         self._consolidated = False      # flag to signal if all wordcounts sorted

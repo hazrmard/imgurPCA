@@ -7,6 +7,12 @@ from imgurpca import Post
 from imgurpca import Parser
 from csv import reader, writer
 
+# The Learner class performs analysis on the data (particularly wordcounts) generated
+# by the Post/Parser/User classes. It first reduces the dimensionality of the data
+# through principal component analysis (PCA) and gets axes that best describe the
+# wordcounts. Learner is subclassed from base.BaseLearner and adds the get_comment_axes()
+# method to generate axes from individual comments in a post/by a user instead
+# from a collection of posts/users.
 
 class Learner(BaseLearner):
 

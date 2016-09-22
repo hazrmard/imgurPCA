@@ -19,6 +19,7 @@ def flatten(container, lvl=1, accessor=lambda x: x.children):
 
 def sanitize(sentence):
     """takes a sentence and returns a list of words
+    @param sentence (str): a string
     """
     sentence = sentence.lower() # to lower case
     words = sentence.split()    # split on whitespace

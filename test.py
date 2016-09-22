@@ -206,11 +206,16 @@ def test_parallel_func(cs, cid):
         def parallel_process(self, pkg, common):
             return pkg**2
 
-    p = myParallel(range(50),nthreads=4)
+    def callback(l):
+        l.extend([n**2 for n in range(50)])
+
+    square_list = []
+    p = myParallel(range(50), nthreads=4)
+    p.set_callback(func=callback, args=(square_list,))
     p.start()
     p.wait_for_threads()
     r = p.get_results()
-    if not r==[n**2 for n in range(50)]:
+    if not r==square_list:
         raise ValueError('Result list incorrect.')
 
 @test

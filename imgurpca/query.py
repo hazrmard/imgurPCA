@@ -3,6 +3,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 from imgurpca.config import InvalidArgument, PrematureFunctionCall
 
+# The Query class is passed to Parser.get() function. It generates a dictionary
+# representing a query that the imgur API can accept. The Parser then matches
+# the query type with the appropriate API endpoint to get Post objects.
 
 class Query(object):
 

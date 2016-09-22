@@ -5,7 +5,7 @@ from imgurpython.imgur.models.image import Image
 from imgurpython.imgur.models.album import Album
 from imgurpython.imgur.models.gallery_album import GalleryAlbum
 from imgurpython.imgur.models.account import Account
-from imgurpython.helpers.error import ImgurClientRateLimitError, ImgurClientError
+from imgurpython.client import ImgurClientRateLimitError, ImgurClientError
 from imgurpca import Post
 from imgurpca import User
 from imgurpca import Query
@@ -14,15 +14,23 @@ from imgurpca.base import Molecular
 from imgurpca import utils
 from imgurpca import config
 import numpy as np
+import sys
 
 # The Parser class performs operations on a collection of Post or User objects
 # stored in Parser.items. Parser can either populate posts from IDs or from a
 # Query object. In addition it performs feature selection operations on the
 # downloaded data. Parser.items can contain all properly subclassed instances of
 # base.Atomic class (e.g. User and Post).
-# Parser is subclassed from Molecular.
+# Parser is subclassed from base.Molecular.
 
 class Parser(Molecular):
+
+    class Downloader(Molecular.Downloader):
+        def parellel_process(self, pkg, common):
+            try:
+                super(Downloader, self).parallel_process(pkg, common)
+            except ImgurClientRateLimitError:
+                print('Rate limit exceeded.', file=sys.stderr)
 
 
     def __init__(self, nthreads=8, *args, **kwargs):
@@ -53,12 +61,16 @@ class Parser(Molecular):
         """
         source_func = self._query_to_client[query.mode]
         self.items = []
-        if isinstance(pages, int):
-            self.items.extend(source_func(page=pages, **query.content))
-        elif isinstance(pages, (tuple,list)):
-            for i in range(*pages):
-                self.items.extend(source_func(page=i, **query.content))
-        self.items = [Post(client=self.client, **p.__dict__) for p in self.items]
+        try:
+            if isinstance(pages, int):
+                self.items.extend(source_func(page=pages, **query.content))
+            elif isinstance(pages, (tuple,list)):
+                for i in range(*pages):
+                    self.items.extend(source_func(page=i, **query.content))
+        except ImgurClientRateLimitError:
+            print('Rate limit exceeded.', file=sys.stderr)
+        finally:
+            self.items = [Post(client=self.client, **p.__dict__) for p in self.items]
 
 
     def populate_posts(self, posts):
