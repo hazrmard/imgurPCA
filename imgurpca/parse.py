@@ -54,6 +54,17 @@ class Parser(Molecular):
                                 Query.MEMES: self.client.memes_subgallery}
 
 
+    def content(self, flatten=True, accessor=lambda x:x.children):
+        """returns a generator (optionally flattened) of content attributes of
+        User/Post objects in self.items.
+        @param flatten (bool): whether to flatten nested comments
+        @param accessor (func): a function that returns reference to nested
+                                elements.
+        Returns a list (nested if flatten=False) of comment objects.
+        """
+        return super(Parser, self).content(flatten, accessor)
+
+
     def get(self, query, pages=0):
         """instantiates posts to self.items based on a query.
         @param query (Query): a Query instance. See query.py.

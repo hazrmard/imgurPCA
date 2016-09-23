@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from imgurpython import ImgurClient
 from imgurpca.base import config
 
-def flatten(container, lvl=1, accessor=lambda x: x.children):
+def flatten(container, lvl=1, accessor=lambda x: x):
     """convert arbitrarily nested arrays of comments into a flat array
     Acts as a generator. Returns a tuple of (comment object, level)
     @param accessor (func): OPTIONAL. Returns a reference to nested elements.

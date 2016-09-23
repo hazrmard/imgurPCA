@@ -122,7 +122,7 @@ def test_structure_flattening(cs, cid):
     with open(p, 'rb') as f:
         comments = pickle.load(f)             # a serialized comment object w/ known values
     n=0
-    for c in utils.flatten(comments):
+    for c in utils.flatten(comments, accessor=lambda x: x.children):
         n+=1
     if n!=54:
         raise ValueError('Comment object incorrectly flattened.')

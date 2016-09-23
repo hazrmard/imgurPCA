@@ -26,16 +26,15 @@ class Molecular(object):
             setattr(self, attr, kwargs[attr])
 
 
-    @property
-    def content(self, flatten=True):
-        """returns a generaor containing list[s] of content objects for all items.
+    def content(self, flatten=True, accessor=lambda x:x):
+        """returns a generator containing list[s] of content objects for all items.
         [[post1.content], [post2.comments]...[postn.comments]]
         See imgur API data models for comment object attributes.
         @param flatten (bool): whether to flatten lists.
         """
         for item in self.items:
             if flatten:
-                for c, level in utils.flatten(item.content):
+                for c, level in utils.flatten(item.content, accessor=accessor):
                     yield c
             else:
                 for c in item.content:
@@ -44,6 +43,10 @@ class Molecular(object):
     @property
     def words(self):
         return self.wordcount['word']
+
+    @property
+    def weights(self):
+        return self.wordcount['weight']
 
 
     def download(self):
@@ -118,7 +121,7 @@ class Molecular(object):
         """split self.items into two Molecular instances to use as learning and
         training data.
         @param fraction (float): fraction of items to keep in first of 2 instances
-        Returns 2 Molecular objects. NOTE: items in Molecular objects are references to
+        Returns 2 lists of Atomic. NOTE: items in Molecular objects are references to
         self.items. So any changes to items in self.items or in the 2 Moleculars
         will be reflected.
         """
