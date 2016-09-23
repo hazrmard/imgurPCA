@@ -305,9 +305,9 @@ def test_learner_instance(cs, cid):
     global SAMPLE_PARSER
     global SAMPLE_LEARNER
     SAMPLE_LEARNER = ()
-    SAMPLE_LEARNER = Learner(user=SAMPLE_USER)
-    SAMPLE_LEARNER = Learner(user=SAMPLE_PARSER) # does not check for type, just keyword
-    SAMPLE_LEARNER = Learner(parser=SAMPLE_PARSER)  # passed to the next func
+    SAMPLE_LEARNER = Learner(source=SAMPLE_USER)
+    SAMPLE_LEARNER = Learner(source=SAMPLE_PARSER) # does not check for type, just keyword
+    SAMPLE_LEARNER = Learner(source=SAMPLE_PARSER)  # passed to the next func
 
 @test
 def test_learner_axes(cs, cid):
@@ -491,7 +491,7 @@ if __name__=='__main__':
     test_learner_axes('Testing eigenvector generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_learner_projection('Testing projection to axes:', cs=CLIENT_SECRET, cid=CLIENT_ID)
     test_learner_clustering('Testing k-means clustering:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_learner_regression('Testing linear regression:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_learner_regression('Testing learner regression:', cs=CLIENT_SECRET, cid=CLIENT_ID)
 
 #   Bot instance only
     test_bot_instance('Testing Bot class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)

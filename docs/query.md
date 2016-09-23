@@ -22,7 +22,7 @@ q = Query(Query.SUBREDDIT)
 ```
 Parameters:
 - what (int):
-    Specifies which gallert/section on imgur to search. One of:
+    Specifies which gallery/section on imgur to search. One of:
         * Query.GALLERY_TOP,
         * Query.GALLERY_HOT,
         * Query.GALLERY_USER,
@@ -43,7 +43,7 @@ q.over(Query.WEEK)
 ```
 Parameters:
 - ovr (str):
-    What period to query over One of:
+    What period to query over. One of:
         * Query.DAY,
         * Query.WEEK,
         * Query.MONTH,

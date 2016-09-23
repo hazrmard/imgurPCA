@@ -16,11 +16,11 @@ from csv import reader, writer
 
 class BaseLearner(object):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, source=None, *args, **kwargs):
         """provide a source as a keyword argument
         @param source (Atomic/Molecular): a an instance of Atomic/Molecular subclass
         """
-        self.source = None
+        self.source = source
         self.axes = None          # np.array 2D float [len(self.words) x # of axes]
         self._custom_words = None # list of words if custom axes set, alternative
                                   # to self.source.words. Set by self.set_axes()
@@ -144,7 +144,7 @@ class BaseLearner(object):
         return np.dot(weights, self.axes)   #projection = weights . axes
 
 
-    def k_means_cluster(self, projections, nclusters):     # 'self' added by decorator
+    def k_means_cluster(self, projections, nclusters):
         """using projection coordinates, group coordinates together based on
         smallest cartesian distance to cluster centers.
         @param projections (2D ndarray): a 2D numpy array with rows representing
@@ -160,6 +160,8 @@ class BaseLearner(object):
         """
         pmax = np.amax(projections)  # get bounding box for cluster centers
         pmin = np.amin(projections)
+        if isinstance(projections, (int, float)):
+            proj = np.array([proj])
         if len(projections.shape)==1:   # accounting for 1D projections if passed
             projections = projections.reshape((1,-1)).T
         centers = np.random.randint(pmin, pmax, size=(nclusters, len(projections[0]))) # allocate memory
@@ -206,6 +208,8 @@ class BaseLearner(object):
                 raise config.PrematureFunctionCall('Specify centers or call \
                             k_means_cluster first to compute centers.')
             ccenters = self.ccenters
+        if isinstance(projections, (int, float)):
+            proj = np.array([proj])
         if len(projections.shape)==1:
             projections = projections.reshape((1,-1))
         assignments = np.zeros(len(projections))
@@ -235,6 +239,8 @@ class BaseLearner(object):
         Returns a 1D numpy array [1 + # of axes] corresponding to coefficients
         of the plane equation prediction = a0 + a1.x1 + a2.x2 +...
         """
+        if isinstance(projections, (int, float)):
+            proj = np.array([proj])
         if len(projections.shape)==1:   # accounting for 1D projections if passed
             projections = projections.reshape((1,-1)).T
         coefficients = np.vstack((np.ones(projections.shape[0]), projections.T)).T
@@ -258,6 +264,8 @@ class BaseLearner(object):
                 raise config.PrematureFunctionCall('Specify coefficients of \
                                 call linear_regression() first.')
             coefficients = self.lrc
+        if isinstance(projections, (int, float)):
+            proj = np.array([proj])
         if len(projections.shape)==1:
             projections = projections.reshape((1,-1)).T
         return coefficients[0] + np.dot(coefficients[1:], projections.T)
@@ -272,7 +280,7 @@ class BaseLearner(object):
         a 1 or 0 label.
         """
         c = self.linear_regression(projections, labels, False)  # coefficients
-        def r(proj):
+        def r(proj):    # proj is a 1D array of a single coordinate
             if isinstance(proj, (int, float)):
                 proj = np.array([proj])
             y = c[0] + np.dot(proj, c[1:])
@@ -296,6 +304,8 @@ class BaseLearner(object):
                 raise config.PrematureFunctionCall('Specify rfunc or call linear\
                             _regression() first.')
             rfunc = self.lrf
+        if isinstance(projections, (int, float)):
+            proj = np.array([proj])
         if len(projections.shape)==1:
             projections = projections.reshape((1,-1)).T
         labels = np.zeros(len(projections))
