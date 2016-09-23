@@ -191,5 +191,5 @@ Sort `Post.wordcount` in default sort order (`config.DEFAULT_SORT_ORDER`)
 ```python
 def sort(self):
 # Examples
-p.sort_by_weight()
+p.sort()
 ```
