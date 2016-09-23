@@ -38,7 +38,7 @@
 
 - wordcount (ndarray):
     A numpy array of words and their weights. Of dtype=config.DT_WORD_WEIGHT.
-    Each element has 2 fields: 'word' (10 char unicode) and 'weight' (float).
+    Each element has 2 fields: 'word' (32 char unicode) and 'weight' (float).
     Populated after generate_word_counts().
 
 - words (ndarray):

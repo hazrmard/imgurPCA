@@ -13,7 +13,7 @@ subclassed from `Molecular`.
 
 - wordcount (ndarray):
     A numpy array of words and their weights. Of dtype=config.DT_WORD_WEIGHT.
-    Each element has 2 fields: 'word' (10 char unicode) and 'weight' (float).
+    Each element has 2 fields: 'word' (32 char unicode) and 'weight' (float).
     Populated after consolidate().
 
 - words (ndarray):
@@ -39,8 +39,8 @@ subclassed from `Molecular`.
 def __init__(self, nthreads=8, *args, **kwargs):
 # Example
 from imgurpca import Parser
-P = Parser(cs='client secret', cid='cliend id')
-P = Parser(cs='client secret', cid='cliend id', items=[LIST_OF_POST_INSTANCES])
+P = Parser(cs='client secret', cid='client id')
+P = Parser(cs='client secret', cid='client id', items=[LIST_OF_POST_INSTANCES])
 ```
 ```
 Parameters:
@@ -63,8 +63,7 @@ Any keyword arguments will be added as instance attributes.
 ### get
 Query imgur for posts matching certain criteria. `get` takes a `Query` instance
 as argument which provides a single interface to access various endpoints on
-the imgur API. After `get()`, `self.items` is a list of Gallery Image/Album
-objects. See imgur API data models for details.
+the imgur API. 
 ```python
 def get(self, query, pages=0):
 # Example
@@ -104,7 +103,7 @@ Parameters
 - flatten (bool):
     Whether to include child comments or  not.
 ```
-  
+
 ### populate_posts
 Instantiates `Post` objects from post ids or Imgur Gallery Image/Album/
 GalleryAlbum objects. Instances are placed in self.items.
