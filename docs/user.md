@@ -202,5 +202,5 @@ Sort `User.wordcount` in default sort order (`config.DEFAULT_SORT_ORDER`)
 ```python
 def sort(self):
 # Examples
-u.sort_by_weight()
+u.sort()
 ```
