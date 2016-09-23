@@ -46,8 +46,8 @@ class Atomic(object):
 
 
     def filter_by_weight(self, minimum, maximum, reverse=False):
-        """filter out words in self.wordcount with minumum <= weights <= maximum
-         less than min. reverse=True filters out words with max < weights < min
+        """filter out words in self.wordcount with minumum >= weights >= maximum
+         reverse=True filters out words with minimum < weights < maximum
         """
         if minimum>maximum:
             raise ValueError('Minimum is less than maximum.')

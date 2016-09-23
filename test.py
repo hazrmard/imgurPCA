@@ -54,7 +54,10 @@ def print_credits(cs, cid):
 def test_post_instance(cs, cid):
     """check if instantiation of Post works with accentable arguments"""
     p = Post(123, comments=['123', 'abc'], cs=cs, cid=cid)
-    p = Post(123, comments=['123', 'abc'], cs='123fasfa', cid='asdeerwwe33')
+    try:
+        p = Post(123, comments=['123', 'abc'], cs='123fasfa', cid='asdeerwwe33')
+    except ImgurClientError:
+        pass
     try:
         p = Post(123)
         raise Exception('InvalidArgument expected.')
@@ -84,7 +87,7 @@ def test_post_user_extraction(cs, cid):
 
 @test
 def test_user_instance(cs, cid):
-    u = User('blah', cid='asdadasd', cs='123123qd')
+    u = User('blah', cid=cid, cs=cs)
     try:
         u = User(123)
         raise Exception('InvalidArgument exception expected.')
@@ -145,7 +148,7 @@ def test_word_counts(cs, cid):
     obj = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'testdata'+os.path.sep+'test_comment.object'
     with open(obj, 'rb') as f:
         comments = pickle.load(f)             # a serialized comment object w/ known values
-    p = Post('asd',cid='asd',cs='asd', comments=comments, points=100)
+    p = Post('asd',cid=cid,cs=cs, comments=comments, points=100)
     p.generate_word_counts(child_comments=False, comment_votes=True,
                             comment_level=True)
     p.generate_word_counts(child_comments=False, comment_votes=True,
@@ -165,9 +168,9 @@ def test_weight_filters(cs, cid):
     brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr2 = np.array([('a',1),('b',2)],dtype=config.DT_WORD_WEIGHT)
-    p = Post('asd', wordcount=arr, cs='123',cid='asd')
+    p = Post('asd', wordcount=arr, cid=cid,cs=cs)
     p.filter_by_weight(3,5)
-    q = Post('def',wordcount=brr, cs='123',cid='asd')
+    q = Post('def',wordcount=brr, cid=cid,cs=cs)
     q.filter_by_weight(3,5,True)
     if not (np.array_equal(p.wordcount,arr1) and np.array_equal(q.wordcount,arr2)):
         raise ValueError('Filtered array not as expected.')
@@ -178,9 +181,9 @@ def test_word_filters(cs, cid):
     brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr2 = np.array([('a',1),('b',2)],dtype=config.DT_WORD_WEIGHT)
-    p = Post('asd', wordcount=arr, cs='123',cid='asd')
+    p = Post('asd', wordcount=arr, cid=cid,cs=cs)
     p.filter_by_word(['c','d','e'], reverse=False)
-    q = Post('def',wordcount=brr, cs='123',cid='asd')
+    q = Post('def',wordcount=brr, cid=cid,cs=cs)
     q.filter_by_word(['c','d','e'], reverse=True)
     if not (np.array_equal(p.wordcount,arr1) and np.array_equal(q.wordcount,arr2)):
         raise ValueError('Filtered array not as expected.')
@@ -189,13 +192,13 @@ def test_word_filters(cs, cid):
 def test_sorting(cs, cid):
     arr = np.array([('e',1),('a',2),('c',3),('b',4),('d',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',2),('b',4),('c',3),('d',5),('e',1)],dtype=config.DT_WORD_WEIGHT)
-    p = Post('asd',cid='asd',cs='asd', wordcount=arr)
+    p = Post('asd',cid=cid,cs=cs, wordcount=arr)
     p.sort_by_word()
     if not np.array_equal(p.wordcount, brr):
         raise ValueError('Sorted array incorrect.')
     arr = np.array([('e',1),('a',2),('c',3),('b',4),('d',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',2),('b',4),('c',3),('d',5),('e',1)],dtype=config.DT_WORD_WEIGHT)
-    p = Post('asd',cid='asd',cs='asd', wordcount=brr)
+    p = Post('asd',cid=cid,cs=cs, wordcount=brr)
     p.sort_by_weight()
     if not np.array_equal(p.wordcount, arr):
         raise ValueError('Sorted array incorrect.')
@@ -267,9 +270,9 @@ def test_parser_consolidation(cs, cid):
     crr = np.array([('a',2),('b',4),('c',6),('d',8),('e',10), ('f', 6)],dtype=config.DT_WORD_WEIGHT)
     drr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f',0)],dtype=config.DT_WORD_WEIGHT)
     err = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f',6)],dtype=config.DT_WORD_WEIGHT)
-    p1 = Post(id=1,cs='123',cid='123',wordcount=arr)
-    p2 = Post(id=2,cs='123',cid='123',wordcount=brr)
-    P = Parser(cid='123',cs='123',items=(p1,p2))
+    p1 = Post(id=1,cid=cid,cs=cs,wordcount=arr)
+    p2 = Post(id=2,cid=cid,cs=cs,wordcount=brr)
+    P = Parser(cid=cid,cs=cs,items=(p1,p2))
     P.consolidate()
     assert np.array_equal(P.wordcount, crr), "Unexpected array output."
     assert np.array_equal(p1.wordcount, drr), "Unexpected array output."
@@ -334,7 +337,7 @@ def test_learner_axes(cs, cid):
     _ = l.set_axes(axes=[myax1, myax2])
     assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
-    p = Post(cs='asd', cid='asd', id='asd', wordcount=myax1)
+    p = Post(cs=cs, cid=cid, id='asd', wordcount=myax1)
     proj = l.project(p)
     assert len(proj[0,:])==len(l.axes[0,:]), 'Invalid projection to axes.'
     assert np.array_equal(proj[0,:], np.array([14,10])), 'Incorrect projection value.'

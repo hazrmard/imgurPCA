@@ -35,11 +35,11 @@ class Learner(BaseLearner):
         Returns and sets self.axes (2D array) as the principal components (column -> axis)
         """
         if isinstance(self.source, Atomic):
-            temp = [Post('x', cs='x', cid='x', comments=[c], points=1) for c in self.source.comments]
+            temp = [Post('x', client=self.source.client, comments=[c], points=1) for c in self.source.comments]
             for p in temp:
                 p.word_weight = self.source.word_weight
                 p.generate_word_counts(child_comments, comment_votes, comment_level)
-            P = Parser(cid='asd', cs='asd', items=temp)
+            P = Parser(client=self.source.client, items=temp)
             P.consolidate()
             L = Learner(source=P)
             self.axes = L.get_axes()

@@ -64,7 +64,7 @@ class Post(Atomic):
         return [c[0].author for c in iterable]
 
 
-    def set_word_weight_func(func):
+    def set_word_weight_func(self, func):
         """word weight=>f(post score, comment votes, comment level)
         Top level comments = 1, 2nd level from top = 2,...
         Default word weighting = word frequency in comments
