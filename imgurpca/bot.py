@@ -5,7 +5,6 @@ from imgurpca import utils
 from imgurpca import config
 from imgurpca.base import Electronic
 from imgurpca import imutils
-import webbrowser
 from glob import glob
 import threading
 import time
@@ -47,17 +46,15 @@ class Bot(Electronic):
         self.anon = False
 
 
-    def auth_url(self, launch=False):
+    @property
+    def auth_url(self):
         """returns a url the user must go to to obtain a pin for authentication.
         Only use this func and authorize() if acting on behalf of a user and not
         anonymously.
         @param launch (bool): Whether to open the link in a browser automatically.
         Returns the url to obtain the pin for authorization.
         """
-        url = self.client.get_auth_url('pin')
-        if launch:
-            webbrowser.open(url)
-        return url
+        return self.client.get_auth_url('pin')
 
 
     def authorize(self, pin, credfile=None):
@@ -104,18 +101,21 @@ class Bot(Electronic):
         else:
             res = self.client.upload_from_path(imgpath, config=kwargs, anon=self.anon)
         if share:
+            if self.anon:
+                raise config.PrematureFunctionCall('Authenticate Bot first.')
             self.share(res['id'], res['title'])
             res['in_gallery'] = True
         return res
 
 
-    def delete_image(self, imgid):
+    def delete_image(self, img_id):
         """deletes an image from imgur.
-        @param imgid (str): ID of image (if bot is authenticated) or delete hash
+        @param img_id (str): ID of image (if bot is authenticated) or delete hash
                         (if bot is anonymous). Delete hash is contained in the
                         dict returned from upload_image().
+        Returns API response as a dict.
         """
-        self.client.delete_image(imgid)
+        return self.client.delete_image(img_id)
 
 
     def create_album(self, imgids, share=False, **kwargs):
@@ -125,44 +125,49 @@ class Bot(Electronic):
         pass
 
 
-    def delete_album(self, itemid):
+    def delete_album(self, post_id):
         pass
 
 
-    def unshare(self, itemid):
+    def unshare(self, post_id):
         """remove shared image/album from gallery.
-        @param itemid (str): ID of image/album
+        @param post_id (str): ID of image/album
+        Returns API response as a dict.
         """
-        self.client.remove_from_gallery(itemid)
+        return self.client.remove_from_gallery(post_id)
 
-    def share(self, itemid, title=''):
+
+    def share(self, post_id, title=''):
         """put the image on imgur gallery
         @param itemid (str): ID of image/album
         @param title (str): Title under which to share
+        Returns API response as a dict.
         """
         if self.anon:
             raise config.PrematureFunctionCall('Authenticate Bot first.')
-        self.client.share_on_imgur(itemid, title)
+        return self.client.share_on_imgur(post_id, title)
 
 
-    def _vote(itemid, what):
+    def _vote(post_id, what):
         if self.anon:
             raise config.PrematureFunctionCall('Authenticate Bot first.')
-        self.client.gallery_item_vote(itemid, what)
+        return self.client.gallery_item_vote(post_id, what)
 
 
     def upvote(self, itemid):
         """post an upvote on a gellery image/album. Bot must be Authenticated.
         @param itemid (str): id of item.
+        Returns API response as a dict.
         """
-        self._vote(itemid, 'up')
+        return self._vote(itemid, 'up')
 
 
-    def downvote(self, itemid):
+    def downvote(self, post_id):
         """post a downvote on a gellery image/album. Bot must be Authenticated.
-        @param itemid (str): id of item.
+        @param post_id (str): id of item.
+        Returns API response as a dict.
         """
-        self._vote(itemid, 'down')
+        return self._vote(post_id, 'down')
 
 
     def get_notifications(self, new=True, markread=True):
@@ -178,6 +183,65 @@ class Bot(Electronic):
             raise config.PrematureFunctionCall('Authenticate Bot first.')
         res = self.client.get_notifications(new=new)
         if len(res) and markread:
-            ids = [n.id for n in res['replies'] + res['messages']]
+            ids = [str(n.id) for n in (res['replies'] + res['messages'])]
+            # ** getting ImgurClientError (400): IDs required with this**
             self.client.mark_notifications_as_read(ids)
         return res
+
+
+    def post_comment(self, post_id, comment):
+        """post a comment on a gallery item.
+        @param post_id (str): id of post on gallery.
+        @param comment (str): comment body
+        Returns API response as a dict containing comment id.
+        """
+        if self.anon:
+            raise config.PrematureFunctionCall('Authenticate Bot first.')
+        return self.client.gallery_comment(post_id, comment)
+
+
+    def post_reply(self, comment_id, post_id, comment):
+        """Post a reply to a comment on a gallery post.
+        @param comment_id (str): id of comment to reply to
+        @param post_id (str): id of post on gallery containing the comment.
+        @param comment (str): comment body
+        Returns API response as a dict containing reply id.
+        """
+        if self.anon:
+            raise config.PrematureFunctionCall('Authenticate Bot first.')
+        return self.client.post_comment_reply(comment_id, post_id, comment)
+
+
+    def send_message(self, recipient, message):
+        """send a direct message to a user.
+        @param recipient (str): target username
+        @param message (str): message body
+        Returns API response: a boolean.
+        """
+        if self.anon:
+            raise config.PrematureFunctionCall('Authenticate Bot first.')
+        return self.client.create_message(recipient, message)
+
+
+    def conversation_list(self):
+        """get a list of conversation objects. See imgur API data models.
+        Returns a list of conversation objects. Conversation objects only
+        contain portion of the last message from the other user.
+        For more messages, use get_conversation() to get a single conversation
+        thread.
+        """
+        if self.anon:
+            raise config.PrematureFunctionCall('Authenticate Bot first.')
+        return self.client.conversation_list()
+
+
+    def get_conversation(self, conv_id, page=1):
+        """get a single conversation thread.
+        @param conv_id (str): conversation id
+        @param page (int): page number of conversation. starts from 1.
+        Returns a conversation object with messages stored in messages attribute.
+        Messages are message objects (see API data model)
+        """
+        if self.anon:
+            raise config.PrematureFunctionCall('Authenticate Bot first.')
+        return self.client.get_conversation(conv_id, page)

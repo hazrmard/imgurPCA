@@ -26,11 +26,11 @@ import sys
 class Parser(Molecular):
 
     class Downloader(Molecular.Downloader):
-        def parellel_process(self, pkg, common):
+        def parallel_process(self, pkg, common):
             try:
-                super(Downloader, self).parallel_process(pkg, common)
+                pkg.download()
             except ImgurClientRateLimitError:
-                print('Rate limit exceeded.', file=sys.stderr)
+                print('Rate limit exceeded. Download unfinished.', file=sys.stderr)
 
 
     def __init__(self, nthreads=8, *args, **kwargs):
@@ -79,7 +79,7 @@ class Parser(Molecular):
                 for i in range(*pages):
                     self.items.extend(source_func(page=i, **query.content))
         except ImgurClientRateLimitError:
-            print('Rate limit exceeded.', file=sys.stderr)
+            print('Rate limit exceeded. get() incomplete.', file=sys.stderr)
         finally:
             self.items = [Post(client=self.client, **p.__dict__) for p in self.items]
 

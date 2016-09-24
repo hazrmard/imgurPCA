@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from imgurpca import *
 from imgurpca.base import Parallel
 from imgurpython import ImgurClient
-from imgurpython.helpers.error import ImgurClientError
+from imgurpython.client import ImgurClientError
 import pickle
 import numpy as np
 import os
@@ -23,8 +23,9 @@ TESTS_FAILED = 0
 
 CLIENT_SECRET = ''
 CLIENT_ID = ''
+CLIENT = ImgurClient(CLIENT_ID, CLIENT_SECRET)
 
-def get_test_data(cs, cid):
+def get_test_data(c):
     pass
 
 def test(fn):
@@ -42,18 +43,21 @@ def test(fn):
         print()
     return wrapper
 
-def print_credits(cs, cid):
-    client = ImgurClient(cid,cs)
-    credits = client.credits
-    credits['UserReset'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(credits['UserReset']))
+def print_credits():
+    global CLIENT
+    credits = CLIENT.credits
+    try:
+        credits['UserReset'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(credits['UserReset']))
+    except TypeError:
+        pass
     [print(x[0]+': '+str(x[1]),end='; ') for x in credits.items()]
     print('\n')
 
 
 @test
-def test_post_instance(cs, cid):
+def test_post_instance(c):
     """check if instantiation of Post works with accentable arguments"""
-    p = Post(123, comments=['123', 'abc'], cs=cs, cid=cid)
+    p = Post(123, comments=['123', 'abc'], client=c)
     try:
         p = Post(123, comments=['123', 'abc'], cs='123fasfa', cid='asdeerwwe33')
     except ImgurClientError:
@@ -65,20 +69,20 @@ def test_post_instance(cs, cid):
         pass
 
 @test
-def test_post_download(cs, cid):
+def test_post_download(c):
     """check if all post/comment/user data can be downloaded"""
     global SAMPLE_POST
-    SAMPLE_POST = Post('b91LE', cs=cs, cid=cid)
+    SAMPLE_POST = Post('b91LE', client=c)
     SAMPLE_POST.download()
     try:
-        p = Post('123', cs=cs, cid=cid)
+        p = Post('123', client=c)
         p.download()
         raise Exception('ImgurClientError expected.')
     except ImgurClientError:
         pass
 
 @test
-def test_post_user_extraction(cs, cid):
+def test_post_user_extraction(c):
     if SAMPLE_POST is None:
         raise ValueError('Depends on download test success.')
     ids = SAMPLE_POST.get_user_ids()
@@ -86,8 +90,8 @@ def test_post_user_extraction(cs, cid):
             'ids non-list/tuple OR ids 0-length OR ids non-string'
 
 @test
-def test_user_instance(cs, cid):
-    u = User('blah', cid=cid, cs=cs)
+def test_user_instance(c):
+    u = User('blah', client=c)
     try:
         u = User(123)
         raise Exception('InvalidArgument exception expected.')
@@ -95,19 +99,19 @@ def test_user_instance(cs, cid):
         pass
 
 @test
-def test_user_download(cs, cid):
+def test_user_download(c):
     global SAMPLE_USER
-    SAMPLE_USER = User('apitester', cid=cid, cs=cs)
+    SAMPLE_USER = User('apitester', client=c)
     SAMPLE_USER.download(pages=(0,100))
     try:
-        u = User('123', cs=cs, cid=cid)
+        u = User('123', client=c)
         u.download()
         raise Exception('ImgurClientError expected.')
     except ImgurClientError:
         pass
 
 @test
-def test_user_post_extraction(cs, cid):
+def test_user_post_extraction(c):
     if SAMPLE_USER is None:
         raise ValueError('Depends on download test success.')
     ids = SAMPLE_USER.get_post_ids()
@@ -115,7 +119,7 @@ def test_user_post_extraction(cs, cid):
             'ids non-list/tuple OR ids 0-length OR ids non-string'
 
 @test
-def test_structure_flattening(cs, cid):
+def test_structure_flattening(c):
     """check if arbitrarily nested comments can be flattened for parsing"""
     p = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'testdata' +\
                                                 os.sep + 'test_comment.object'
@@ -134,7 +138,7 @@ def test_structure_flattening(cs, cid):
     assert n==10, 'Nested list incorrectly flattened.'
 
 @test
-def test_sentence_sanitation(cs, cid):
+def test_sentence_sanitation(c):
     """check if sentences can be correctly decomposed into words"""
     s = 'THE QuiCK !brOWn.'
     expected = ['the', 'quick', '!brown.']
@@ -143,12 +147,12 @@ def test_sentence_sanitation(cs, cid):
         raise ValueError('Unexpected sentence decomposition.')
 
 @test
-def test_word_counts(cs, cid):
+def test_word_counts(c):
     """check if parsing funcs work w/ current imgur data structure"""
     obj = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'testdata'+os.path.sep+'test_comment.object'
     with open(obj, 'rb') as f:
         comments = pickle.load(f)             # a serialized comment object w/ known values
-    p = Post('asd',cid=cid,cs=cs, comments=comments, points=100)
+    p = Post('asd',client=c, comments=comments, points=100)
     p.generate_word_counts(child_comments=False, comment_votes=True,
                             comment_level=True)
     p.generate_word_counts(child_comments=False, comment_votes=True,
@@ -163,48 +167,48 @@ def test_word_counts(cs, cid):
     SAMPLE_POST.generate_word_counts(child_comments=True)
 
 @test
-def test_weight_filters(cs, cid):
+def test_weight_filters(c):
     arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr2 = np.array([('a',1),('b',2)],dtype=config.DT_WORD_WEIGHT)
-    p = Post('asd', wordcount=arr, cid=cid,cs=cs)
+    p = Post('asd', wordcount=arr, client=c)
     p.filter_by_weight(3,5)
-    q = Post('def',wordcount=brr, cid=cid,cs=cs)
+    q = Post('def',wordcount=brr, client=c)
     q.filter_by_weight(3,5,True)
     if not (np.array_equal(p.wordcount,arr1) and np.array_equal(q.wordcount,arr2)):
         raise ValueError('Filtered array not as expected.')
 
 @test
-def test_word_filters(cs, cid):
+def test_word_filters(c):
     arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr2 = np.array([('a',1),('b',2)],dtype=config.DT_WORD_WEIGHT)
-    p = Post('asd', wordcount=arr, cid=cid,cs=cs)
+    p = Post('asd', wordcount=arr, client=c)
     p.filter_by_word(['c','d','e'], reverse=False)
-    q = Post('def',wordcount=brr, cid=cid,cs=cs)
+    q = Post('def',wordcount=brr, client=c)
     q.filter_by_word(['c','d','e'], reverse=True)
     if not (np.array_equal(p.wordcount,arr1) and np.array_equal(q.wordcount,arr2)):
         raise ValueError('Filtered array not as expected.')
 
 @test
-def test_sorting(cs, cid):
+def test_sorting(c):
     arr = np.array([('e',1),('a',2),('c',3),('b',4),('d',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',2),('b',4),('c',3),('d',5),('e',1)],dtype=config.DT_WORD_WEIGHT)
-    p = Post('asd',cid=cid,cs=cs, wordcount=arr)
+    p = Post('asd',client=c, wordcount=arr)
     p.sort_by_word()
     if not np.array_equal(p.wordcount, brr):
         raise ValueError('Sorted array incorrect.')
     arr = np.array([('e',1),('a',2),('c',3),('b',4),('d',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',2),('b',4),('c',3),('d',5),('e',1)],dtype=config.DT_WORD_WEIGHT)
-    p = Post('asd',cid=cid,cs=cs, wordcount=brr)
+    p = Post('asd',client=c, wordcount=brr)
     p.sort_by_weight()
     if not np.array_equal(p.wordcount, arr):
         raise ValueError('Sorted array incorrect.')
 
 @test
-def test_parallel_func(cs, cid):
+def test_parallel_func(c):
     class myParallel(Parallel):
         def parallel_process(self, pkg, common):
             return pkg**2
@@ -222,7 +226,7 @@ def test_parallel_func(cs, cid):
         raise ValueError('Result list incorrect.')
 
 @test
-def test_query_class(cs, cid):
+def test_query_class(c):
     q = Query(Query.GALLERY_HOT).sort_by(Query.TOP).over(Query.WEEK).construct()
     assert q.content == {'section':'hot', 'sort':'top', 'window':'week'}, \
                             'Not same as expected dict.'
@@ -244,13 +248,13 @@ def test_query_class(cs, cid):
         pass
 
 @test
-def test_parser_instance(cs, cid):
-    P = Parser(cid=cid, cs=cs)
+def test_parser_instance(c):
+    P = Parser(client=c)
 
 @test
-def test_parser_population(cs, cid):
+def test_parser_population(c):
     global SAMPLE_PARSER
-    SAMPLE_PARSER = Parser(cid=cid, cs=cs)
+    SAMPLE_PARSER = Parser(client=c)
     q = Query(Query.GALLERY_USER).construct()
     SAMPLE_PARSER.get(q)                          # get Post objects from query
     assert len(SAMPLE_PARSER.items)>0, 'Query result of size 0.'
@@ -264,15 +268,15 @@ def test_parser_population(cs, cid):
     SAMPLE_PARSER.download()
 
 @test
-def test_parser_consolidation(cs, cid):
+def test_parser_consolidation(c):
     arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     brr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f', 6)],dtype=config.DT_WORD_WEIGHT)
     crr = np.array([('a',2),('b',4),('c',6),('d',8),('e',10), ('f', 6)],dtype=config.DT_WORD_WEIGHT)
     drr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f',0)],dtype=config.DT_WORD_WEIGHT)
     err = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f',6)],dtype=config.DT_WORD_WEIGHT)
-    p1 = Post(id=1,cid=cid,cs=cs,wordcount=arr)
-    p2 = Post(id=2,cid=cid,cs=cs,wordcount=brr)
-    P = Parser(cid=cid,cs=cs,items=(p1,p2))
+    p1 = Post(id=1,client=c,wordcount=arr)
+    p2 = Post(id=2,client=c,wordcount=brr)
+    P = Parser(client=c,items=(p1,p2))
     P.consolidate()
     assert np.array_equal(P.wordcount, crr), "Unexpected array output."
     assert np.array_equal(p1.wordcount, drr), "Unexpected array output."
@@ -283,23 +287,24 @@ def test_parser_consolidation(cs, cid):
     for item in SAMPLE_PARSER.items:                    # so consolidation can work
         item.generate_word_counts(child_comments=True)
     SAMPLE_PARSER.consolidate()
+    assert len(SAMPLE_PARSER.words), 'No wordcount generated.'
 
 @test
-def test_parser_baseline(cs, cid):
+def test_parser_baseline(c):
     global SAMPLE_PARSER
     a, v = SAMPLE_PARSER.get_baseline()
     assert len(a)==len(SAMPLE_PARSER.words) and len(a)==len(v),\
             'Incorrect output dimensions.'
 
 @test
-def test_parser_split(cs, cid):
+def test_parser_split(c):
     global SAMPLE_PARSER
     s1, s2 = SAMPLE_PARSER.split(0.6)
     assert len(s1) + len(s2) == len(SAMPLE_PARSER.items), \
             'Sample sizes do not add up.'
 
 @test
-def test_learner_instance(cs, cid):
+def test_learner_instance(c):
     global SAMPLE_USER
     global SAMPLE_POST
     global SAMPLE_PARSER
@@ -310,7 +315,7 @@ def test_learner_instance(cs, cid):
     SAMPLE_LEARNER = Learner(source=SAMPLE_PARSER)  # passed to the next func
 
 @test
-def test_learner_axes(cs, cid):
+def test_learner_axes(c):
     global SAMPLE_PARSER
     global SAMPLE_USER
     global SAMPLE_LEARNER
@@ -337,7 +342,7 @@ def test_learner_axes(cs, cid):
     _ = l.set_axes(axes=[myax1, myax2])
     assert len(l.axes)==len(l.words) and isinstance(SAMPLE_LEARNER.axes, np.ndarray),\
                                 'Axes not generated.'
-    p = Post(cs=cs, cid=cid, id='asd', wordcount=myax1)
+    p = Post(client=c, id='asd', wordcount=myax1)
     proj = l.project(p)
     assert len(proj[0,:])==len(l.axes[0,:]), 'Invalid projection to axes.'
     assert np.array_equal(proj[0,:], np.array([14,10])), 'Incorrect projection value.'
@@ -350,7 +355,7 @@ def test_learner_axes(cs, cid):
     assert np.array_equal(m.axes, l.axes), 'Loaded axes do not match'
 
 @test
-def test_learner_projection(cs, cid):
+def test_learner_projection(c):
     global SAMPLE_LEARNER
     global SAMPLE_POST
     if SAMPLE_LEARNER.axes is None:
@@ -360,7 +365,7 @@ def test_learner_projection(cs, cid):
                 'Unexpected dimensions in result projections.'
 
 @test
-def test_learner_clustering(cs, cid):
+def test_learner_clustering(c):
     l = Learner()
     proj = np.array([[1,1,1],[1,2,3],[3,0,1],[2,0,0],[0,0,1],[0,1,0],[3,2,1],
                     [0,0,0],[2,1,2],[2,2,2],[3,2,3],[3,2,0],[1,1,0],[0,0,3]])
@@ -379,7 +384,7 @@ def test_learner_clustering(cs, cid):
     assert np.array_equal(res, np.array([0,1,2,0])), 'Incorrect clustering.'
 
 @test
-def test_learner_regression(cs, cid):
+def test_learner_regression(c):
     l = Learner()
     projections = np.array([1,2,3])
     predictions = np.array([2,4,6])
@@ -403,19 +408,19 @@ def test_learner_regression(cs, cid):
             'Wrong regression prediction.'
 
 @test
-def test_bot_instance(cs, cid):
+def test_bot_instance(c):
     global SAMPLE_BOT
-    SAMPLE_BOT = Bot(cs=cs, cid=cid)
+    SAMPLE_BOT = Bot(client=c)
 
 @test
-def test_auth_url(cs, cid):
-    b = Bot(cs=cs, cid=cid)
-    url = b.auth_url()
+def test_auth_url(c):
+    b = Bot(client=c)
+    url = b.auth_url
     r = requests.get(url)
     assert r.status_code==200, 'Could not validate auth url.'
 
 @test
-def test_bot_authentication(cs, cid):
+def test_bot_authentication(c):
     global SAMPLE_BOT
     if SAMPLE_BOT is None:
         raise Exception('Depends on Bot instance test success.')
@@ -423,7 +428,7 @@ def test_bot_authentication(cs, cid):
     assert SAMPLE_BOT.access_token=='ACCESS TOKEN' and SAMPLE_BOT.refresh_token=='REFRESH TOKEN',\
             'Credentials incorrrectly read.'
     if not os.path.exists('testdata' + os.sep + 'test.cred'):
-        print('\nNew test run detected. Go to this link to get auth pin:\n' + SAMPLE_BOT.auth_url())
+        print('\nNew test run detected. Go to this link to get auth pin:\n' + SAMPLE_BOT.auth_url)
         try:
             pin = raw_input('Enter pin: ')
         except NameError:
@@ -433,14 +438,22 @@ def test_bot_authentication(cs, cid):
         SAMPLE_BOT.load_credentials('testdata'+os.sep+'test.cred')
 
 @test
-def test_bot_image_io(cs, cid):
+def test_bot_image_io(c):
     global SAMPLE_BOT
     res = SAMPLE_BOT.upload_image('testdata'+os.sep+'test.jpg', title='TEST')
     assert res.get('title')=='TEST', 'Image not uploaded.'
     SAMPLE_BOT.delete_image(res.get('id'))
 
 @test
-def test_bot_scheduler(cs, cid):
+def test_bot_messaging(c):
+    global SAMPLE_BOT
+    n = SAMPLE_BOT.get_notifications(new=False, markread=False)
+    assert ('messages' in n) and ('replies' in n), 'Unknown response format.'
+    res = SAMPLE_BOT.post_comment('b91LE', 'test.py comment')
+    res = SAMPLE_BOT.client.delete_comment(res.get('id'))
+
+@test
+def test_bot_scheduler(c):
     global SAMPLE_BOT
     l = []
     def fill(obj):
@@ -452,57 +465,58 @@ def test_bot_scheduler(cs, cid):
 if __name__=='__main__':
     print('\n')
     if '-n' in sys.argv:
-        get_test_data(cs=CLIENT_SECRET, cid=CLIENT_ID)
+        get_test_data(c=CLIENT)
 
     print('Available API credits: ')
-    print_credits(cid=CLIENT_ID, cs=CLIENT_SECRET)
+    print_credits()
     print('===============')
 #   Post class only
-    test_post_instance('Testing Post class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_post_download('Testing post data download:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_post_user_extraction('Testing user id extraction from post:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_post_instance('Testing Post class instantiation:', c=CLIENT)
+    test_post_download('Testing post data download:', c=CLIENT)
+    test_post_user_extraction('Testing user id extraction from post:', c=CLIENT)
 
 #   User class only
-    test_user_instance('Testing User class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_user_download('Testing user data download:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_user_post_extraction('Testing post id extraction from user:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_user_instance('Testing User class instantiation:', c=CLIENT)
+    test_user_download('Testing user data download:', c=CLIENT)
+    test_user_post_extraction('Testing post id extraction from user:', c=CLIENT)
 
 #   shared User/Post funcs
-    test_sentence_sanitation('Testing sentence decomposition:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_structure_flattening('Testing flattening nested comments:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_word_counts('Testing word count generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_weight_filters('Testing word count filters by weight:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_word_filters('Testing word count filters by words:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_parallel_func('Testing parallel execution:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_sorting('Testing for wordcount sorting:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_sentence_sanitation('Testing sentence decomposition:', c=CLIENT)
+    test_structure_flattening('Testing flattening nested comments:', c=CLIENT)
+    test_word_counts('Testing word count generation:', c=CLIENT)
+    test_weight_filters('Testing word count filters by weight:', c=CLIENT)
+    test_word_filters('Testing word count filters by words:', c=CLIENT)
+    test_parallel_func('Testing parallel execution:', c=CLIENT)
+    test_sorting('Testing for wordcount sorting:', c=CLIENT)
 
 #   Query class only
-    test_query_class('Testing query construction:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_query_class('Testing query construction:', c=CLIENT)
 
 #   Parser class only
-    test_parser_instance('Testing Parser class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_parser_population('Testing query, post, user population:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_parser_consolidation('Testing for parser consolidation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_parser_baseline('Testing baseline generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_parser_split('Testing item splitting for test/learn:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_parser_instance('Testing Parser class instantiation:', c=CLIENT)
+    test_parser_population('Testing query, post, user population:', c=CLIENT)
+    test_parser_consolidation('Testing for parser consolidation:', c=CLIENT)
+    test_parser_baseline('Testing baseline generation:', c=CLIENT)
+    test_parser_split('Testing item splitting for test/learn:', c=CLIENT)
 
 #   Learner instance only
-    test_learner_instance('Testing Learner class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_learner_axes('Testing eigenvector generation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_learner_projection('Testing projection to axes:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_learner_clustering('Testing k-means clustering:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_learner_regression('Testing learner regression:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_learner_instance('Testing Learner class instantiation:', c=CLIENT)
+    test_learner_axes('Testing eigenvector generation:', c=CLIENT)
+    test_learner_projection('Testing projection to axes:', c=CLIENT)
+    test_learner_clustering('Testing k-means clustering:', c=CLIENT)
+    test_learner_regression('Testing learner regression:', c=CLIENT)
 
 #   Bot instance only
-    test_bot_instance('Testing Bot class instantiation:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_auth_url('Testing authentication URL:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_bot_authentication('Testing Bot credentials:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_bot_image_io('Testing image upload/delete:', cs=CLIENT_SECRET, cid=CLIENT_ID)
-    test_bot_scheduler('Testing Bot scheduler:', cs=CLIENT_SECRET, cid=CLIENT_ID)
+    test_bot_instance('Testing Bot class instantiation:', c=CLIENT)
+    test_auth_url('Testing authentication URL:', c=CLIENT)
+    test_bot_authentication('Testing Bot credentials:', c=CLIENT)
+    test_bot_image_io('Testing image upload/delete:', c=CLIENT)
+    test_bot_messaging('Testing bot messaging:', c=CLIENT)
+    test_bot_scheduler('Testing Bot scheduler:', c=CLIENT)
 
     print('===============')
     print('Available API credits: ')
-    print_credits(cid=CLIENT_ID, cs=CLIENT_SECRET)
+    print_credits()
 
     print('\n==================')
     print('Tests passed: ' + str(TESTS_PASSED))

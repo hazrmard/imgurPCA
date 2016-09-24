@@ -91,8 +91,7 @@ class Parallel:
         self.cargs = args
         self.ckwargs = kwargs
         def callback_wrapper(parallel_instance):
-            while parallel_instance.still_running():
-                pass
+            parallel_instance.wait_for_threads()
             parallel_instance.callback(*parallel_instance.cargs, **parallel_instance.ckwargs)
         self.cthread = threading.Thread(target=callback_wrapper, args=(self,))
         self.cthread.daemon = True

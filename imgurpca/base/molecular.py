@@ -8,7 +8,7 @@ import numpy as np
 # The Molecular class (as in: a collection of atoms) is a container class for
 # Atomic subclasses. It can perform cumulative filtration and feature selection
 # functions. Atomic objects are stored in Molecular.atoms. The get() method should
-# be overwritten in case the sources can be obtained through an API (see Parser)
+# be overwritten in case the sources can be obtained through an API (see Parser).
 
 class Molecular(object):
 
@@ -52,10 +52,9 @@ class Molecular(object):
     def download(self):
         """downloads whatever items (User/Post objects) are placed in self.items
         """
-        D = Molecular.Downloader(self.items, nthreads=self.nthreads)
+        D = self.__class__.Downloader(self.items, nthreads=self.nthreads)
         D.start()
         D.wait_for_threads()
-        print('Rate limit exceeded:\n' + str(self.client.credits))
 
 
     def get(self, query,):
