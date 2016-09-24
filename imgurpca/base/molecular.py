@@ -77,6 +77,8 @@ class Molecular(object):
         word_dict = {}
         if words is not None:           # initialize dict with acceptable words
             word_dict = {w:0 for w in words}
+            for item in self.items:     # filter items using words
+                item.filter_by_word(words)
 
         for item in self.items:
             if item.wordcount is None:
@@ -108,7 +110,7 @@ class Molecular(object):
         """
         if not self._consolidated:
             raise config.PrematureFunctionCall('Consolidate first.')
-        matrix = np.zeros((len(self.items), len(self.words)))
+        matrix = np.zeros((len(self.items), len(self.weights)))
         for i, item in enumerate(self.items):
             matrix[i,:] = item.weights
         means = np.mean(matrix, axis=0)

@@ -23,6 +23,7 @@ def sanitize(sentence):
     """
     sentence = sentence.lower() # to lower case
     words = sentence.split()    # split on whitespace
+    words = [w[:config.MAX_WORD_LENGTH] for w in words]
     return words
 
 

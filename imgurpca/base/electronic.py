@@ -81,6 +81,8 @@ class Electronic(object):
         self._task.start()
 
 
-    def stop(self):
+    def stop(self, force=False):
         """stop the task after it comes out of sleep for next execution"""
         self._task.common[1].set()
+        if force:
+            self._taskthread.join(timeout=0)

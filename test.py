@@ -450,6 +450,7 @@ def test_bot_messaging(c):
     n = SAMPLE_BOT.get_notifications(new=False, markread=False)
     assert ('messages' in n) and ('replies' in n), 'Unknown response format.'
     res = SAMPLE_BOT.post_comment('b91LE', 'test.py comment')
+    assert 'id' in res, 'Comment not posted.'
     res = SAMPLE_BOT.client.delete_comment(res.get('id'))
 
 @test

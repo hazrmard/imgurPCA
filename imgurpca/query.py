@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import absolute_import
-from imgurpca.config import InvalidArgument, PrematureFunctionCall
+from imgurpca import config
 
 # The Query class is passed to Parser.get() function. It generates a dictionary
 # representing a query that the imgur API can accept. The Parser then matches
@@ -48,7 +48,7 @@ class Query(object):
                     Query.CUSTOM, Query.RANDOM
         """
         if not what in Query._allowed_whats:
-            raise InvalidArgument('''Choose from Query.GALLERY_TOP, Query.GALLERY_HOT,
+            raise config.InvalidArgument('''Choose from Query.GALLERY_TOP, Query.GALLERY_HOT,
                         Query.GALLERY_USER, Query.SUBREDDIT, Query.MEMES, Query.TAG,
                         Query.CUSTOM, Query.RANDOM''')
         self._what = what
@@ -83,7 +83,7 @@ class Query(object):
                             Query.ALL
         """
         if not ovr in Query._allowed_overs:
-            raise InvalidArgument('Choose from Query.DAY, Query.WEEK, Query.MONTH, Query.YEAR,\
+            raise config.InvalidArgument('Choose from Query.DAY, Query.WEEK, Query.MONTH, Query.YEAR,\
                                 Query.ALL')
         self._over = ovr
         return self
@@ -94,7 +94,7 @@ class Query(object):
         @param sort (str): one of One of Query.TOP, Query.TIME, Query.RISING, Query.VIRAL
         """
         if not sort in Query._allowed_sorts:
-            raise InvalidArgument('Choose from Query.TOP, Query.TIME,\
+            raise config.InvalidArgument('Choose from Query.TOP, Query.TIME,\
                                         Query.RISING, Query.VIRAL')
         self._sort_by = sort
         return self
@@ -105,7 +105,7 @@ class Query(object):
         @param p (str): a query string with keywords/subreddit name
         """
         if not self._what in (Query.CUSTOM, Query.SUBREDDIT, Query.TAG):
-            raise PrematureFunctionCall('Query must be Query.CUSTOM/Query.SUBREDDIT/Query.TAG')
+            raise config.PrematureFunctionCall('Query must be Query.CUSTOM/Query.SUBREDDIT/Query.TAG')
         self._q = q
         return self
 
@@ -118,15 +118,15 @@ class Query(object):
         # query params handling
         if self._what == Query.CUSTOM:              # set up custom query
             if self._q is None:
-                raise InvalidArgument('Set custom query params through Query().params()')
+                raise config.InvalidArgument('Set custom query params through Query().params()')
             params['q'] = self._q
         elif self._what == Query.SUBREDDIT:         # set up subreddit name
             if self._q is None:
-                raise InvalidArgument('Set subreddit name through Query().params()')
+                raise config.InvalidArgument('Set subreddit name through Query().params()')
             params['subreddit'] = self._q
         elif self._what == Query.TAG:               # set up tag param
             if self._q is None:
-                raise InvalidArgument('Set tag through Query().params()')
+                raise config.InvalidArgument('Set tag through Query().params()')
             params['tag'] = self._q
         elif self._what == Query.GALLERY_USER:      # add section param for GALLERY_*
             params['section'] = 'user'
@@ -140,7 +140,7 @@ class Query(object):
         if self._sort_by == Query.TOP:              # window only if Query.TOP
             params['window'] = self._over
         elif self._over:                            # otherwise raise exception
-            raise InvalidArgument('Query().over() only applies for Query(Query.TOP)')
+            raise config.InvalidArgument('Query().over() only applies for Query(Query.TOP)')
         # process sort_bys and compatible modes
         if self._what == Query.GALLERY_USER:        # accepts all sort_bys
             params['sort'] = self._sort_by
@@ -155,4 +155,4 @@ class Query(object):
             params['sort'] = self._sort_by
             return self
         elif self._what is None or self._sort_by is not None:
-            raise InvalidArgument('Invalid Query mode and sort-by combination.')
+            raise config.InvalidArgument('Invalid Query mode and sort-by combination.')

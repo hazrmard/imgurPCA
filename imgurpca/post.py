@@ -98,6 +98,4 @@ class Post(Atomic):
                 except KeyError:
                     words[w] = weight
 
-        unique, counts = np.unique(words.keys(), return_counts=True)
-        self.wordcount = np.array([(unique[i], words[unique[i]]*counts[i]) for i in
-                                range(len(unique))], dtype=config.DT_WORD_WEIGHT)
+        self.wordcount = np.array(words.items(), dtype=config.DT_WORD_WEIGHT)

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import unicode_literals
 from imgurpca import Query
 from imgurpca import Parser
 from imgurpca import Learner
@@ -9,9 +10,9 @@ import sys
 
 
 def gen_axes(output=None, **kwargs):
-    """generate axes from comments on gallery top section, first page, sorted
-    by top, over 1 week. axes are generated from the top 25 most varying words in
-    the gallery posts.
+    """generate axes from comments on gallery top section, first page, top 25 posts,
+    sorted by top, over 1 week. axes are generated from the top 25 words with the
+    largest variance / mean ratio.
     @param cid (string): client id, use with 'cs'
     @param cs (string): client secret, use with 'cid'.
     OR:
@@ -22,6 +23,7 @@ def gen_axes(output=None, **kwargs):
     if __name__=='__main__':
         print('Downloading posts...')
     p.get(q, pages=0)           # get post ids + metadata based on query
+    p.items = p.items[:25]
     p.download()                # download post comments
 
     if __name__=='__main__':
@@ -37,12 +39,12 @@ def gen_axes(output=None, **kwargs):
 
     p.consolidate()             # make words uniform across posts
     m, v = p.get_baseline()     # get means and variances for words
-    top = np.argsort(v)[::-1]   # indices for variance in descending order
+    top = np.argsort(v/m)[::-1]   # indices for variance in descending order
     p.consolidate(words=p.words[top[:25]])  # only leave top 25 words by variance
 
     l = Learner(source=p)
     ax = l.get_axes()
-    
+
     if output is not None:      # store axes if filename specified
         l.save_axes(fname=output)
     if __name__!='__main__':    # do not return array if running as a script

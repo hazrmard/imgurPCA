@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
+from imgurpython.client import ImgurClientError
 from imgurpca import utils
 from imgurpca import config
 from imgurpca.base import Electronic
@@ -113,7 +114,7 @@ class Bot(Electronic):
         @param img_id (str): ID of image (if bot is authenticated) or delete hash
                         (if bot is anonymous). Delete hash is contained in the
                         dict returned from upload_image().
-        Returns API response as a dict.
+        Returns boolean indicating success.
         """
         return self.client.delete_image(img_id)
 
@@ -132,7 +133,7 @@ class Bot(Electronic):
     def unshare(self, post_id):
         """remove shared image/album from gallery.
         @param post_id (str): ID of image/album
-        Returns API response as a dict.
+        Returns boolean to indicate unshare success.
         """
         return self.client.remove_from_gallery(post_id)
 
@@ -141,25 +142,25 @@ class Bot(Electronic):
         """put the image on imgur gallery
         @param itemid (str): ID of image/album
         @param title (str): Title under which to share
-        Returns API response as a dict.
+        Returns bool to indicate share success.
         """
         if self.anon:
             raise config.PrematureFunctionCall('Authenticate Bot first.')
         return self.client.share_on_imgur(post_id, title)
 
 
-    def _vote(post_id, what):
+    def _vote(self, post_id, what):
         if self.anon:
             raise config.PrematureFunctionCall('Authenticate Bot first.')
         return self.client.gallery_item_vote(post_id, what)
 
 
-    def upvote(self, itemid):
+    def upvote(self, post_id):
         """post an upvote on a gellery image/album. Bot must be Authenticated.
-        @param itemid (str): id of item.
+        @param post_id (str): id of item.
         Returns API response as a dict.
         """
-        return self._vote(itemid, 'up')
+        return self._vote(post_id, 'up')
 
 
     def downvote(self, post_id):
@@ -182,11 +183,15 @@ class Bot(Electronic):
         if self.anon:
             raise config.PrematureFunctionCall('Authenticate Bot first.')
         res = self.client.get_notifications(new=new)
-        if len(res) and markread:
-            ids = [str(n.id) for n in (res['replies'] + res['messages'])]
-            # ** getting ImgurClientError (400): IDs required with this**
-            self.client.mark_notifications_as_read(ids)
-        return res
+        try:
+            if len(res) and markread:
+                ids = [str(n.id) for n in (res['replies'] + res['messages'])]
+                # ** getting ImgurClientError (400): IDs required with this**
+                self.client.mark_notifications_as_read(ids)
+        except ImgurClientError as e:
+            raise e
+        finally:
+            return res
 
 
     def post_comment(self, post_id, comment):

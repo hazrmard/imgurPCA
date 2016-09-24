@@ -25,10 +25,10 @@ subclassed from `Molecular`.
     Of dtype=config.DT_WEIGHT. Read only.
 
 - cs (str):
-    The client secret. Set at instantiation.
+    The client secret. Set at instantiation if provided.
 
 - cid (str):
-    The client id. Set at instantiation.
+    The client id. Set at instantiation if provided.
 
 - client (ImgurClient):
     An instance of imgurpython.ImgurClient. Exposes entire imgurpython API.
@@ -63,7 +63,7 @@ Any keyword arguments will be added as instance attributes.
 ### get
 Query imgur for posts matching certain criteria. `get` takes a `Query` instance
 as argument which provides a single interface to access various endpoints on
-the imgur API. 
+the imgur API.
 ```python
 def get(self, query, pages=0):
 # Example

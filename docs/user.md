@@ -56,10 +56,10 @@
     Post's generate_word_counts(). Defaults to config.DEFAULT_WORD_WEIGHT.
 
 - cs (str):
-    The client secret. Set at instantiation.
+    The client secret. Set at instantiation if provided.
 
 - cid (str):
-    The client id. Set at instantiation.
+    The client id. Set at instantiation if provided.
 
 - client (ImgurClient):
     An instance of imgurpython.ImgurClient. Exposes entire imgurpython API.
