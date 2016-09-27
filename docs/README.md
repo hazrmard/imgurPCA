@@ -8,9 +8,18 @@ The user needs to register their application with the API and get a `client
 secret` and `client id`.  
 
 ## Installation
-No `setup.py` file has been created yet. It will be put in once more
-functionality is added to the package. In its current state, the package
-folder `imgurpca` needs to be copied to your source directory and imported.
+Clone this repository:  
+```bash
+>> git clone https://github.com/hazrmard/imgurPCA.git
+```
+Navigate to repository root:  
+```bash
+>> cd imgurPCA
+```
+Run install:  
+```bash
+>> python setup.py install
+```
 
 ## Getting Started
 First go to [imgur settings](https://imgur.com/account/settings/apps) and
