@@ -28,8 +28,7 @@ class Molecular(object):
 
     def content(self, flatten=True, accessor=lambda x:x):
         """returns a generator containing list[s] of content objects for all items.
-        [[post1.content], [post2.comments]...[postn.comments]]
-        See imgur API data models for comment object attributes.
+        [[post1.content], [post2.content]...[postn.content]]
         @param flatten (bool): whether to flatten lists.
         """
         for item in self.items:
@@ -63,7 +62,7 @@ class Molecular(object):
         pass
 
 
-    def consolidate(self, words=None):
+    def consolidate(self, words=None, reverse=False):
         """Generate a cumulative wordcount from the items' wordcounts. Add 0-weight
         words to items' wordlists so all items have the same set of words. Sort
         cumulative wordlist and item wordlists (by word) so index positions are
@@ -71,6 +70,8 @@ class Molecular(object):
         @param words (list/array): OPTIONAL - a list of words to keep and consolidate.
                                 Otherwise, generates list of unique words from
                                 all wordcounts in self.items
+        @param reverse (bool): True->filter out 'words', use everything else,
+                               False->only use 'words', filter out everything else.
         """
         if len(self.items)==0:
             raise config.PrematureFunctionCall('No User/Post objects in self.items.')
@@ -78,7 +79,7 @@ class Molecular(object):
         if words is not None:           # initialize dict with acceptable words
             word_dict = {w:0 for w in words}
             for item in self.items:     # filter items using words
-                item.filter_by_word(words)
+                item.filter_by_word(words, reverse)
 
         for item in self.items:
             if item.wordcount is None:

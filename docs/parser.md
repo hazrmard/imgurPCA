@@ -139,7 +139,7 @@ positions are identical.This makes the data set homogenous. This also populates
 `Parser.wordcount`. Consolidate should be called after `Parser.items`'s
 wordcounts have been generated.
 ```python
-def consolidate(self, words=None):
+def consolidate(self, words=None, reverse=False):
 # Example
 P.consolidate()
 P.consolidate(words=['my', 'name'])     # only keep words 'my' and 'name'
@@ -147,8 +147,11 @@ P.consolidate(words=['my', 'name'])     # only keep words 'my' and 'name'
 ```
 Parameters:
 - words (list/ndarray):
-    A list of words (str) to keep. If words are not present in items' words,
-    they will be added with 0 weights.
+    OPTIONAL. A list of words (str) to keep. If words are not present in items'
+    words, they will be added with 0 weights. If None, all words are kept.
+
+- reverse (bool):
+    If True, filters out 'words'. If False, filters out everything else.
 ```
 
 ### get_baseline

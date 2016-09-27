@@ -54,7 +54,7 @@ class Parser(Molecular):
                                 Query.MEMES: self.client.memes_subgallery}
 
 
-    def content(self, flatten=True, accessor=lambda x:x.children):
+    def content(self, flatten=True):
         """returns a generator (optionally flattened) of content attributes of
         User/Post objects in self.items.
         @param flatten (bool): whether to flatten nested comments
@@ -62,7 +62,7 @@ class Parser(Molecular):
                                 elements.
         Returns a list (nested if flatten=False) of comment objects.
         """
-        return super(Parser, self).content(flatten, accessor)
+        return super(Parser, self).content(flatten, accessor=lambda x: x.children)
 
 
     def get(self, query, pages=0):

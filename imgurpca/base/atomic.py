@@ -82,3 +82,9 @@ class Atomic(object):
         used by Parser.consolidate() and Learner.project() functions as well.
         """
         self.wordcount.sort(order=[config.DEFAULT_SORT_ORDER])
+
+
+    def normalize(self):
+        """normalize wordcount weights such that they sum to 1.
+        """
+        self.wordcount['weight'] = self.weights / sum(self.weights)

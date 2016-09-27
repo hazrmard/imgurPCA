@@ -256,7 +256,7 @@ Returns boolean indicating success.
 ```
 
 ### unshare
-Put an already uploaded image on imgur gallery.
+Remove an already uploaded/shared image from imgur gallery.
 ```python
 def unshare(self, post_id):
 # Example

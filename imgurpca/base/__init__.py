@@ -8,3 +8,4 @@ from imgurpca.base.atomic import Atomic
 from imgurpca.base.molecular import Molecular
 from imgurpca.base.baselearn import BaseLearner
 from imgurpca.base.electronic import Electronic
+from imgurpca.base.markov import Markov

@@ -55,7 +55,7 @@ def gen_axes(output=None, **kwargs):
 
 if __name__=='__main__':
     if len(sys.argv)!=4 or '-h' in sys.argv:        # no arguments provided
-        print('\nUsage:\tpython -m imgurpca.base.gen_axes CLIENT_SECRET CLIENT_ID',
+        print('\nUsage:\tpython -m imgurpca.macros.gen_axes CLIENT_SECRET CLIENT_ID',
                 'OUTPUT_FILE\n')
         exit(0)
     gen_axes(output=sys.argv[3], cs=sys.argv[1], cid=sys.argv[2])

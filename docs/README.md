@@ -50,6 +50,17 @@ access the imgur API's various endpoints.
 describe the data. Using them it can perform regression and clustering
 operations on *Post*/*User* objects.
 * **Bot** can get authenticated and act on behalf of a user. It can also
-periodically perform tasks (like uploading, commenting etc.).
+periodically perform tasks (like uploading, commenting etc.).  
+
+In addition, the `imgurpca.macros` module provides additional tools built on
+top of the main classes:  
+* **gen_axes** is a python script/function that can generate and save axes from
+popular posts and save them for use by other code. For usage check source, or
+type:  
+```bash
+>> python -m imgurpca.macros.gen_axes -h
+```  
+* **Chatter** is a class that can generate random comments and replies based on
+comments on posts, or by a single user.
 
 The class APIs are explained in further detail in their respective `.md` files.

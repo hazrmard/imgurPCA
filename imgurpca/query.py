@@ -140,7 +140,7 @@ class Query(object):
         if self._sort_by == Query.TOP:              # window only if Query.TOP
             params['window'] = self._over
         elif self._over:                            # otherwise raise exception
-            raise config.InvalidArgument('Query().over() only applies for Query(Query.TOP)')
+            raise config.InvalidArgument('Query().over() only applies for sort_by(Query.TOP)')
         # process sort_bys and compatible modes
         if self._what == Query.GALLERY_USER:        # accepts all sort_bys
             params['sort'] = self._sort_by

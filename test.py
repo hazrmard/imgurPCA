@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from imgurpca import *
 from imgurpca.base import Parallel
+from imgurpca.macros import Chatter
 from imgurpython import ImgurClient
 from imgurpython.client import ImgurClientError
 import pickle
@@ -165,6 +166,14 @@ def test_word_counts(c):
         raise ValueError('Depends on download test success.')
     SAMPLE_USER.generate_word_counts()      # User has no child_comments option
     SAMPLE_POST.generate_word_counts(child_comments=True)
+
+@test
+def test_normalization(c):
+    arr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
+    brr = np.array([1,2,3,4,5]) / 15.0
+    p = Post(id='xyz', client=c, wordcount=arr)
+    p.normalize()
+    assert np.array_equal(p.weights, brr), 'Incorrect normalization.'
 
 @test
 def test_weight_filters(c):
@@ -463,6 +472,20 @@ def test_bot_scheduler(c):
     time.sleep(3)
     assert len(l)==2 or len(l)==3, 'Unexpected scheduler result'
 
+@test
+def test_chatter(c):
+    obj = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'testdata'+os.path.sep+'test_comment.object'
+    with open(obj, 'rb') as f:
+        comments = pickle.load(f)             # a serialized comment object w/ known values
+    p = Post(client=c, id='xyz', comments=comments)
+    c = Chatter(source = p)
+    c.generate_chain()
+    assert len(c.chain), 'Chain not generated.'
+    res = c.random_comment()
+    assert len(res), 'No output generated.'
+    res = c.random_reply(to='here')
+    assert len(res), 'No output generated.'
+
 if __name__=='__main__':
     print('\n')
     if '-n' in sys.argv:
@@ -485,6 +508,7 @@ if __name__=='__main__':
     test_sentence_sanitation('Testing sentence decomposition:', c=CLIENT)
     test_structure_flattening('Testing flattening nested comments:', c=CLIENT)
     test_word_counts('Testing word count generation:', c=CLIENT)
+    test_normalization('Testing wordcount normalization:', c=CLIENT)
     test_weight_filters('Testing word count filters by weight:', c=CLIENT)
     test_word_filters('Testing word count filters by words:', c=CLIENT)
     test_parallel_func('Testing parallel execution:', c=CLIENT)
@@ -514,6 +538,9 @@ if __name__=='__main__':
     test_bot_image_io('Testing image upload/delete:', c=CLIENT)
     test_bot_messaging('Testing bot messaging:', c=CLIENT)
     test_bot_scheduler('Testing Bot scheduler:', c=CLIENT)
+
+#   Test macros
+    test_chatter('Testing random chatter:', c=CLIENT)
 
     print('===============')
     print('Available API credits: ')
