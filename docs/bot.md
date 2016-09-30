@@ -326,7 +326,7 @@ Parameters:
 Returns API response as a dict containing comment id in field 'id'.
 ```
 
-## post_reply
+### post_reply
 Post a reply to a comment.
 ```python
 def post_reply(self, comment_id, post_id, comment):
@@ -347,7 +347,7 @@ Parameters:
 Returns API response as a dict containing reply id.
 ```
 
-## send_message
+### send_message
 Send a direct message to a user.
 ```python
 def send_message(self, recipient, message):

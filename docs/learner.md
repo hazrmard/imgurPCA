@@ -27,6 +27,10 @@ unsupervised learning.
 - lrf (func):
     A logistic regression function. Maps a 2D array of coordinates to an array
     of binary labels.
+
+- dtree (DTree):
+    An instance of base.DTree representing a decision tree. Populated after
+    decision_tree() is called.
 ```
 
 ### Instantiation
@@ -224,7 +228,8 @@ Returns a 1D array of predictions in the same order as projections.
 ```
 
 ### logistic_regression
-Performs logistic regression on projections and their binary labels.
+Performs logistic regression on projections and their binary labels. Logistic
+regression is a way of classifying data that have one of 2 labels (0 or 1).
 ```python
 def logistic_regression(self, projections, labels):
 # Example
@@ -264,4 +269,71 @@ Parameters:
     to the function calculated in logistic_regression()
 
 Returns a 1D array of binary labels the same length as projections.
+```
+
+### decision_tree
+Constructs a decision tree, given the data set, labels, and number of branches
+or splitting points. A decision tree splits data by the attribute which causes
+the greatest information gain (pre-split entropy - post-split entropy). It
+keeps splitting until there are no more attributes or if all data are
+classified.
+```python
+def decision_tree(self, projections, labels, branches=2):
+# Example
+proj = np.array([[1,1,0],[1,1,1],[0,0,0],[0,0,1]])
+labels = np.array([0,1,0,1])
+dtree = L.decision_tree(proj, labels, branches=2)   # all attributes split in 2
+dtree = L.decision_tree(proj, labels, branches=[2,3,4])  # 1st attr: 2 branches,
+                                                         # 2nd attr: 3 branches,
+                                                         # 3rd attr: 4 branches.
+dtree = L.decision_tree(proj, labels,
+                        branches=np.array([[0.5],   # 1st attr splits at 0.5
+                                           [0.33,0.66], # splits at 0.33 & 0.66
+                                           [0.25,0.50,0.75]]))  # splits @ 3 pts
+```
+```
+Parameters:
+- projections (2D ndarray):
+    A 2D array of projections where each row contains coordinates for an
+    item on Learner.axes. For 1D array each element is a separate coordinate.
+
+- labels  (ndarray):
+    A 1D numpy array of numerical labels for each projection.
+
+- branches (int/array/2D array):
+    Specifies number of branches on each attribute. If int, same number of
+    branches for all attributes. If list, each element inside is the # of
+    branches for attribute in that index in coordinates. If list of lists, each
+    sub-list specifies the values at which to split an attribute. Values are
+    upper bounds (inclusive) of the split. For n values, there will be n+1
+    splits. A minimum of n=1 (split points) i.e 2 branches are required
+    for all attributes. If no split points provided or branches=1 for an
+    attribute, it is ignored.
+
+Returns a base.DTree instance which represents the decision tree. The instance
+has 2 useful methods:
+    - print_tree(): prints the various branches of the tree for visualization,
+    - classify():   given a 2D array of projections, computes probable labels
+                    for each. Use Learner.decision_prediction() instead.
+```
+
+### decision_prediction
+After the decision tree is computed, calculates probabilities of each label for
+each projection provided. So a projection may have a 75% chance of being
+labelled 1 and a 25% chance of being labelled 2.
+```python
+def decision_prediction(self, projections):
+# Example
+proj = np.array([[1,0,1],[1,1,0]])
+res = L.decision_prediction(proj)
+```
+```
+Parameters:
+- projections (2D ndarray):
+    A 2D array of projections where each row contains coordinates for an
+    item on Learner.axes. For 1D array each element is a separate coordinate.
+
+Returns a 3D numpy array. The first axis is an array of 2D predictions for each
+projection. Each prediction is a 2D array where each row is of the form [label,
+probability of being that label].
 ```

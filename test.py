@@ -405,7 +405,7 @@ def test_learner_regression(c):
     assert len(res)==4, 'Unexpected result dimensions'
     res2 = l.linear_prediction(np.array([[3,4,5]]))
     assert len(res2)==1 and res[0]+(3*res[1]+4*res[2]+5*res[3])==res2[0], \
-                'Incorrect regression prediction.'
+                'Incorrect linear regression prediction.'
 
     proj = np.arange(10).reshape((5,2))
     lbl = np.array([0,0,0,1,1])
@@ -414,7 +414,29 @@ def test_learner_regression(c):
     proj = np.random.randint(0,100,size=(3,2))
     res = l.logistic_prediction(proj)
     assert len(res)==len(proj) and max(res)<=1 and min(res)>=0, \
-            'Wrong regression prediction.'
+            'Wrong logistic regression prediction.'
+
+@test
+def test_learner_decision_tree(c):
+    l = Learner()
+    data = np.array([[1,1,1],
+                     [0,1,0],
+                     [1,0,1],
+                     [0,0,1],
+                     [0,0,0],
+                     [0,1,1],
+                     [1,0,0],
+                     [1,1,0]
+                     ])
+    labels = np.array([0,1,0,0,1,0,1,1])    # even numbers = 1
+    dt = l.decision_tree(data, labels, branches=2)
+    dt = l.decision_tree(data, labels, branches=[2,2,2])
+    dt = l.decision_tree(data, labels, branches=[[0.5],[0.75],[0.9]])
+    res = l.decision_prediction(np.array([[1,1,0]]))
+    assert np.array_equal(res, np.array([[[1.,1.]]])), 'Incorrect decision.'
+    dt = l.decision_tree(data, labels, branches=1)
+    res = l.decision_prediction(np.array([[1,1,0]]))
+    assert np.array_equal(res, np.array([[[0.,0.5],[1.,0.5]]])), 'Incorrect decision.'
 
 @test
 def test_bot_instance(c):
@@ -530,6 +552,7 @@ if __name__=='__main__':
     test_learner_projection('Testing projection to axes:', c=CLIENT)
     test_learner_clustering('Testing k-means clustering:', c=CLIENT)
     test_learner_regression('Testing learner regression:', c=CLIENT)
+    test_learner_decision_tree('Testing decision tree: ', c=CLIENT)
 
 #   Bot instance only
     test_bot_instance('Testing Bot class instantiation:', c=CLIENT)

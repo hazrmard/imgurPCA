@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from imgurpca.base import utils
 from imgurpca.base import config
 from imgurpca.base.parallel import Parallel
+from imgurpca.base.tree import DTree
 from imgurpca.base.atomic import Atomic
 from imgurpca.base.molecular import Molecular
 from imgurpca.base.baselearn import BaseLearner

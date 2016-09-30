@@ -1,12 +1,15 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
+from __future__ import division
 from imgurpca.base import Atomic
 from imgurpca.base import Molecular
+from imgurpca.base import DTree
 from imgurpca.base import utils
 from imgurpca.base import config
 import numpy as np
 from csv import reader, writer
+from collections import deque
 
 # BaseLearner provides functions that generate axes to describe data points and
 # perform further analyses. Axes are generated from the source which is a Molecular
@@ -29,6 +32,8 @@ class BaseLearner(object):
                                   # a0 + a1.x1 + a2.x2+...
         self.lrf = None           # logistic regression function, result of
                                   # Learner.logistic_regression()
+        self.dtree = None         # base.DTree instance after decision_tree() is
+                                  # called. Used for prediction.
 
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
@@ -121,6 +126,7 @@ class BaseLearner(object):
                                         with wordcounts calculated.
         Returns a 2D numpy array of projections (each row->coordinates, column->axis)
         """
+        # PREPROCESSING
         if self.axes is None:
             raise config.PrematureFunctionCall('Calculate axes first.')
         wc = None
@@ -132,7 +138,7 @@ class BaseLearner(object):
         elif isinstance(source, Atomic):
             wc = [source.wordcount]
             weights = np.zeros((1,len(self.axes)))
-
+        # CALCULATIONS
         zero_words = np.setdiff1d(self.words, source.words, assume_unique=True)
         zero_wordcounts = np.array(zip(zero_words, np.zeros(len(zero_words))), dtype=config.DT_WORD_WEIGHT)
         in_both = np.in1d(source.words, self.words, assume_unique=True)
@@ -158,12 +164,14 @@ class BaseLearner(object):
         cluster indices in 1st element. Order corresponds to elements in
         projection argument.
         """
-        pmax = np.amax(projections)  # get bounding box for cluster centers
-        pmin = np.amin(projections)
+        # PREPROCESSING
         if isinstance(projections, (int, float)):
             proj = np.array([proj])
         if len(projections.shape)==1:   # accounting for 1D projections if passed
             projections = projections.reshape((1,-1)).T
+        # CALCULATIONS
+        pmax = np.amax(projections)  # get bounding box for cluster centers
+        pmin = np.amin(projections)
         centers = np.random.randint(pmin, pmax, size=(nclusters, len(projections[0]))) # allocate memory
         pre = np.zeros(len(projections))
         nex = np.ones(len(projections))
@@ -203,6 +211,7 @@ class BaseLearner(object):
         Returns a 1D array where each element is the index of cluster center in
         ccenters the projection matched with.
         """
+        # PREPROCESSING
         if ccenters is None:
             if self.ccenters is None:
                 raise config.PrematureFunctionCall('Specify centers or call \
@@ -212,6 +221,7 @@ class BaseLearner(object):
             proj = np.array([proj])
         if len(projections.shape)==1:
             projections = projections.reshape((1,-1))
+        # CALCULATIONS
         assignments = np.zeros(len(projections))
         for i in range(len(projections)):
             closest = None
@@ -239,11 +249,13 @@ class BaseLearner(object):
         Returns a 1D numpy array [1 + # of axes] corresponding to coefficients
         of the plane equation prediction = a0 + a1.x1 + a2.x2 +...
         """
+        # PREPROCESSING
         if isinstance(projections, (int, float)):
             proj = np.array([proj])
         if len(projections.shape)==1:   # accounting for 1D projections if passed
             projections = projections.reshape((1,-1)).T
         coefficients = np.vstack((np.ones(projections.shape[0]), projections.T)).T
+        # CALCULATIONS
         res =  np.linalg.lstsq(coefficients, predictions)[0]
         if store:
             self.lrc = res
@@ -259,6 +271,7 @@ class BaseLearner(object):
                                     [a0, a1, a2,...], a0 is intercept/bias
         Returns a 1D array of predictions in the same order as projections.
         """
+        # PREPROCESSING
         if coefficients is None:
             if self.lrc is None:
                 raise config.PrematureFunctionCall('Specify coefficients of \
@@ -268,6 +281,7 @@ class BaseLearner(object):
             proj = np.array([proj])
         if len(projections.shape)==1:
             projections = projections.reshape((1,-1)).T
+        # CALCULATIONS
         return coefficients[0] + np.dot(coefficients[1:], projections.T)
 
 
@@ -299,6 +313,7 @@ class BaseLearner(object):
                                 in projections and returns a label.
         Returns a 1D numpy array of binary labels in the same order as projections.
         """
+        # PREPROCESSING
         if rfunc is None:
             if self.lrf is None:
                 raise config.PrematureFunctionCall('Specify rfunc or call linear\
@@ -309,6 +324,161 @@ class BaseLearner(object):
         if len(projections.shape)==1:
             projections = projections.reshape((1,-1)).T
         labels = np.zeros(len(projections))
+        # CALCULATIONS
         for i in range(len(labels)):
             labels[i] = rfunc(projections[i])
         return labels
+
+
+    def decision_tree(self, projections, labels, branches=2):
+        """computes a decision tree based on attributes contained in projections
+        by splitting by attribute which yields maximum information gain for the
+        labels. Splits until all coordinates in projections used up or if there
+        is no entropy in the label subsets.
+        @param projections (ndarray): a 2D numpy array where each row is
+                            coordinates representing a point. If 1D, each element
+                            is considered a separate coordinate of 1 dimension.
+        @param labels (list/array): a list of numerical labels for each of the
+                            coordinates in projections.
+        @branches (int/array/2D array): specifies number of branches on each
+                            attribute. If int, same number of branches for
+                            all attributes. If list, each element inside is
+                            the # of branches for attribute in that index in
+                            coordinates. If list of lists, each sublist specifies
+                            the values at which to split an attribute. Values
+                            are upper bounds (inclusive) of the split. For
+                            n values, there will be n+1 splits. A minimum of
+                            n=1 (split points) i.e 2 branches are required
+                            for all attributes.
+        """
+        # PREPROCESSING
+        if len(projections.shape)==1:
+            projections = projections.reshape((1,-1)).T
+        if isinstance(branches, (int, float)):      # if branches is number, conv to list of #
+            branches = [branches] * len(projections[0])
+        if isinstance(branches, (list, tuple, np.ndarray)) and \
+            isinstance(branches[0], (int, float)):  # if list of #, conv to list of
+            nbranches = []                          # lists of split points
+            for i, n in enumerate(branches):
+                minimum = np.min(projections[:, i])             # smallest value of attribute
+                d = (np.max(projections[:, 1]) - minimum) / n   # interval between branch values
+                nbranches.append([minimum+j*d for j in range(1,n)])
+            branches = nbranches
+        branches = np.array(branches)
+        # Now branches is a 2D array, where each sublist contains the
+        # inclusive top limit of splits for each attribute
+        # i.e [[1,2],[2,3]...], then the first sublist, [1,2] containing 2 values,
+        # for the first attribute [<=1, >1 and <=2, >2] will split projections
+        # into 2+1 branches
+        # CALCULATIONS
+        dtree = DTree()                       # contains the finished decision tree
+        counter=0                             # counts # of nodes added to tree
+        q = deque()                           # contains references to proj pending _find_max_info_gain
+        bfilter = np.array([1 if len(x) else 0 for x in branches], dtype=bool)
+        q.appendleft((np.ones(len(labels), dtype=bool), 0, -1, bfilter)) # queue of (filter, index, parent, branch_filter)
+
+        while len(q):                         # breadth-first traversal of decision tree
+            f, index, parent, bfilter = q.pop()
+            ig, bi, filters, probs = self._find_max_info_gain(projections[f][:,bfilter], labels[f], branches[bfilter])
+
+            if bi is not None:
+                j=0                             # bi is the index of branch axis in
+                for i, b in enumerate(bfilter): # branches[bfilter], i.e. the bi'th
+                    if b:                       # True value in bfilter. This finds
+                        j+=1                    # the absolute index of that True
+                        if i==bi:               # value, hence branch axis in the
+                            break               # original array 'branches'.
+
+            dtree.add_node(index=index, parent=parent, axis=i if bi is not None else None,
+                    branch=branches[bi] if bi is not None else (), probabilities=probs)
+
+            bfilter_copy = np.copy(bfilter)
+            bfilter_copy[bi] = False
+            if ig>0:    # if there was any info gain, then process results
+                for fi in filters:          # fi is of length f[f], i.e. whatever the
+                    counter+=1              # filter let through, so cannot apply to
+                    f_copy = np.copy(f)     # the original projections. This resizes
+                    f_copy[f_copy] = fi[:]  # fi so it can directly act on projections.
+                    q.appendleft((f_copy, counter, index, bfilter_copy))
+            else:       # if no info gain i.e no more branches or labels fully classified
+                pass
+        dtree.construct()
+        self.dtree = dtree
+        return self.dtree
+
+
+    def decision_prediction(self, projections):
+        """given projections, outputs an array of prorabilities for each label
+        that each projection might belong to.
+        @param projections (2D ndarray): a 2D array, where each row is a
+                        coordinate. If 1D each element is a separate coordinate.
+        Returns a 3D numpy array. The first axis is an array of 2D predictions
+        for each projection. Each prediction is a 2D array where each row is
+        of the form [label, probability of being that label].
+        """
+        if len(projections.shape)==1:
+            projections = projections.reshape((1,-1)).T
+        return self.dtree.classify(projections)
+
+
+    def _find_max_info_gain(self, projections, labels, branches):
+        """given projections, their labels, and branching points, calculates
+        branching on which attribute would yeild the maximum information gain.
+        @param projections (ndarray): 2D numpy array, each row-> coordinate.
+        @param labels (array/list): list of labels same length as projections.
+        @param branches (ndarray/list): 2D array, each row -> split points for
+                                    coord attribute/axis in the row's index.
+        Returns a tuple of:    (maximum info gain,
+                                index of axis that was split,
+                                bool filters describing projs in each split,
+                                an array of tulples (label, probability))
+        """
+        mig_bi = None   # max information gain branch index
+        mig = 0         # max info gain
+        mig_f = None    # max info gain filters
+
+        ulbl, counts = np.unique(labels, return_counts=True)
+        size_parent = len(labels)
+        p = counts / size_parent       # probability p
+        entropy_parent = np.sum(-p * np.log(p))
+        labels_probs = np.vstack((ulbl, p)).T
+
+        for i, b in enumerate(branches):    # find which attribute's branching -> max info
+            if not len(b):
+                continue        # do not process when no branching -> no info gain
+            filters = self._split(projections, b, i)
+            entropy_children = 0
+            for f in filters:   # for each branch split, compute its contribution to entropy
+                if not np.any(f):
+                    continue    # skip if filter all false
+                filtered_labels = labels[f]
+                filtered_labels_sz = len(filtered_labels)
+                _, ccounts = np.unique(filtered_labels, return_counts=True)
+                cp = ccounts / filtered_labels_sz     # child probability
+                entropy_children += np.sum(-cp * np.log(cp)) * filtered_labels_sz / size_parent
+            ig = entropy_parent - entropy_children    # information gain
+            if ig>mig:
+                mig = ig
+                mig_bi = i
+                mig_f = filters
+
+        return mig, mig_bi, mig_f, labels_probs
+
+
+    def _split(self, projections, branch, index):
+        """returns boolean arrays that act as filters on projections and labels
+        to split them according to breakpoints in branch.
+        @param projections (ndarray): 2D ndarray, each row is a coordinate.
+        @param branch (list/array): a list of n values to split into n+1 branches.
+        @param index (int): index of attribute in coordinate the branch applies to.
+        Returns a list of boolean arrays, each array filtering in indices belonging
+        to its branch.
+        """
+        if len(branch):
+            cond = []
+            for b in branch:
+                cond.append(projections[:,index]<=b)
+            cond.append(projections[:,index]>branch[-1])
+        else:
+            cond = [np.zeros(len(projections), dtype=bool)]
+        return np.array(cond)
