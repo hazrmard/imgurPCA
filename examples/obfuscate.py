@@ -49,7 +49,7 @@ def obfuscate(credfile):
             pin = raw_input('Enter authorization pin: ')
         except NameError:                               # python 2/3 have different input functions
             pin = input('Enter authorization pin: ')
-            b.authorize(pin, credfile)                  # log the Bot in, store credentials for next time
+        b.authorize(pin, credfile)                      # log the Bot in, store credentials for next time
     else:
         b.load_credentials(credfile)                    # or get credentials from file
 
