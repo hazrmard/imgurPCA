@@ -51,7 +51,8 @@ class Markov(object):
         self.delimiter_pattern = pattern = '([' + re.escape(''.join(self.delimiters))\
                                                 + ''.join(self.regex_delimiters) + ']+)'
         words = [self.stopchars[0]] + \
-                    re.split(pattern, self.plaintext)       # split on delimiters
+                    re.split(pattern, self.plaintext)       # split on delimiters. Delimiters included in split.
+        words = [w for w in words if w!=self.spacechar]     # remove space entries
         key = deque(words[:self.order])
         for i, w in enumerate(words[self.order:]):
             tkey = tuple(key)
@@ -70,6 +71,7 @@ class Markov(object):
         This is repeated by 'times'
         Returns a string.
         """
+        cutoff = 0
         if len(self.chain)==0:
             raise config.PrematureFunctionCall('Generate chain first.')
 
@@ -78,12 +80,14 @@ class Markov(object):
 
         if isinstance(begin, basestring):   # if string, convert to tuple
             begin = re.split(self.delimiter_pattern, begin)
+            begin = [w for w in begin if w!=self.spacechar]     # remove space entries
             if len(begin)<self.order:       # if tuple size is smaller than key size
                 sbegin = set(begin)         # find a key w/ similar words as tuple
                 begin = None                # if not, find a random key
                 for key in self.chain.keys():
                     if pattern.search(key[0]) and sbegin.intersection(set(key)):
                         begin = key
+                        cutoff = len(begin)
                         break
 
         if begin is None:       # select a random start position.
@@ -93,6 +97,7 @@ class Markov(object):
             while not pattern.search(begin[0]) and i<len(keys):
                 begin = random.choice(keys)
                 i+=1
+            cutoff = 1
 
         out = list(begin)
         for i in range(times):
@@ -106,7 +111,7 @@ class Markov(object):
                 if pattern.search(out[-1]):
                     break
 
-        return self.spacechar.join(out)
+        return self.spacechar.join(out[cutoff:])
 
 
     def sanitize(self, text):

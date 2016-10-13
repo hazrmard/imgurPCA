@@ -53,7 +53,7 @@ from imgurpca.macros import Chatter
 from imgurpca import Post
 p = Post(id='some id', cs='client_secret', cid='client_id')
 p.download()
-c = Chatter(source=c, order=3)
+c = Chatter(source=p, order=3)
 ```
 ```
 Parameters:

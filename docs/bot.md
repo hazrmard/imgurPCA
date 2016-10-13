@@ -105,6 +105,7 @@ b.every(Bot.MINUTE)
 Parameters:
 - interval (int):
     An interval value. Any combination of:
+        * Bot.SECOND,
         * Bot.MINUTE,
         * Bot.HOUR,
         * Bot.DAY,
@@ -158,6 +159,24 @@ b.until(time.time()+Bot.HOUR)
 Parameters:
 - when (int):
     Time to finish execution in epoch seconds.
+
+Returns a reference to self so scheduling functions can be chained.
+```
+
+### times
+Scheduling function. The number of times the automated task is to be called.
+The task ends when either time time specified in `until()` is reached or the
+function in `do()` is called the number of times specified here, whichever
+comes first.
+```python
+def times(self, n):
+# Example
+b.times(10)     # call function 10 times and quit
+```
+```
+Parameters:
+- n (int):
+    Number of times to call the function provided in do()
 
 Returns a reference to self so scheduling functions can be chained.
 ```

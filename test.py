@@ -492,7 +492,13 @@ def test_bot_scheduler(c):
         obj.append(1)
     SAMPLE_BOT.every(Bot.MINUTE/60).do(fill).using([l]).until(time.time()+3).go()
     time.sleep(3)
-    assert len(l)==2 or len(l)==3, 'Unexpected scheduler result'
+    SAMPLE_BOT.stop(force=True)
+    assert len(l)==2 or len(l)==3, 'Unexpected scheduler timing result.'
+    k = []
+    SAMPLE_BOT.every(Bot.SECOND).do(fill).using([k]).times(2).go()
+    time.sleep(3)
+    SAMPLE_BOT.stop(force=False)
+    assert len(k)==2, 'Unexpected scheduler frequency result.'
 
 @test
 def test_chatter(c):

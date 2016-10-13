@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='imgurpca',
-    version='2.2.0',
+    version='2.2.1',
     description='Machine learning and bots on imgur.com.',
     author='Ibrahim A.',
     author_email='ibrahim78786@gmail.com',
