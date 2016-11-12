@@ -26,6 +26,11 @@ CLIENT_SECRET = ''
 CLIENT_ID = ''
 CLIENT = ImgurClient(CLIENT_ID, CLIENT_SECRET)
 
+try:
+    basestring
+except NameError:
+    basestring = str    # python 3 compatibility
+
 def get_test_data(c):
     pass
 

@@ -90,12 +90,12 @@ class Molecular(object):
                 except KeyError:
                     if words is None:   # otherwise skip word not in words
                         word_dict[w['word']] = w['weight']
-        self.wordcount = np.array(word_dict.items(), dtype=config.DT_WORD_WEIGHT)
+        self.wordcount = np.array(list(word_dict.items()), dtype=config.DT_WORD_WEIGHT)
         self.wordcount.sort(order=[config.DEFAULT_SORT_ORDER])
 
         for item in self.items:
             zero_words = np.setdiff1d(self.words, item.words, assume_unique=True)
-            zero_wordcounts = np.array(zip(zero_words, np.zeros(len(zero_words))), dtype=config.DT_WORD_WEIGHT)
+            zero_wordcounts = np.array(list(zip(zero_words, np.zeros(len(zero_words)))), dtype=config.DT_WORD_WEIGHT)
             item.wordcount = np.append(item.wordcount, zero_wordcounts)
             item.sort()     # using default sort order
         self._consolidated = True
@@ -128,7 +128,7 @@ class Molecular(object):
         will be reflected.
         """
         samples = np.random.choice(self.items, len(self.items), replace=False)
-        n1 = np.floor(len(self.items) * fraction)
+        n1 = int(np.floor(len(self.items) * fraction))
         s1 = samples[:n1]
         s2 = samples[n1:]
         return s1, s2

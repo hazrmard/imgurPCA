@@ -8,6 +8,11 @@ from collections import deque
 import re
 import random
 
+try:    # python2/3 compatibility
+    basestring
+except NameError:
+    basestring = str
+
 # the Markov class generates random text responses based on an input corpus.
 
 
@@ -92,7 +97,7 @@ class Markov(object):
 
         if begin is None:       # select a random start position.
             begin = ('',)
-            keys = self.chain.keys()
+            keys = list(self.chain.keys())
             i=0
             while not pattern.search(begin[0]) and i<len(keys):
                 begin = random.choice(keys)

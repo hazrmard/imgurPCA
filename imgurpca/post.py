@@ -98,4 +98,4 @@ class Post(Atomic):
                 except KeyError:
                     words[w] = weight
 
-        self.wordcount = np.array(words.items(), dtype=config.DT_WORD_WEIGHT)
+        self.wordcount = np.array(list(words.items()), dtype=config.DT_WORD_WEIGHT)

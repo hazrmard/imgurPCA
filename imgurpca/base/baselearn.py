@@ -97,10 +97,10 @@ class BaseLearner(object):
         @param fname (str): name of file containing axes
         """
         n = utils.num_lines(fname)
-        with open(fname, 'r') as f:
+        with open(fname, 'r', newline='') as f:
             c = reader(f)       # csv.reader
-            words = c.next()
-            self._custom_words = np.array(words, dtype=config.DT_WORD)['word']
+            words = next(c)
+            self._custom_words = np.array(list(zip(words)), dtype=config.DT_WORD)['word']   # must me a list of tuples for structured array creation
             axes_t = np.zeros((n-1, len(words)), dtype=float)
             for i, row in enumerate(c):
                 axes_t[i,:] = row
@@ -112,7 +112,7 @@ class BaseLearner(object):
         The following rows correspond to axis vectors in self.axes (i.e. self.axes.T)
         @param fname (str): name of file to save
         """
-        with open(fname, 'wb') as f:
+        with open(fname, 'w', newline='') as f:
             w = writer(f)
             w.writerow(self.words)
             w.writerows(self.axes.T)
@@ -140,7 +140,7 @@ class BaseLearner(object):
             weights = np.zeros((1,len(self.axes)))
         # CALCULATIONS
         zero_words = np.setdiff1d(self.words, source.words, assume_unique=True)
-        zero_wordcounts = np.array(zip(zero_words, np.zeros(len(zero_words))), dtype=config.DT_WORD_WEIGHT)
+        zero_wordcounts = np.array(list(zip(zero_words, np.zeros(len(zero_words)))), dtype=config.DT_WORD_WEIGHT)
         in_both = np.in1d(source.words, self.words, assume_unique=True)
         for i, v in enumerate(wc):            # v-> vector , wc -> wordcount
             vec = np.append(v[in_both], zero_wordcounts)
