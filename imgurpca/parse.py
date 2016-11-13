@@ -68,7 +68,7 @@ class Parser(Molecular):
     def get(self, query, pages=0):
         """instantiates posts to self.items based on a query.
         @param query (Query): a Query instance. See query.py.
-        @param pages (int/tuple): page number or range of pages (inclusive) to get
+        @param pages (int/tuple): page number or range of pages to get
         """
         source_func = self._query_to_client[query.mode]
         self.items = []

@@ -1,3 +1,8 @@
+### CHANGELOG for v2.3.0
+
+* Ported to Python 3.
+* Added Feed-Forward Neural Network.
+
 ### CHANGELOG for v2.2.1
 
 * Added `times()` as frequency limit for Bot automated tasks.
