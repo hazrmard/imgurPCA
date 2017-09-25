@@ -6,13 +6,13 @@ from imgurpython.imgur.models.album import Album
 from imgurpython.imgur.models.gallery_album import GalleryAlbum
 from imgurpython.imgur.models.account import Account
 from imgurpython.client import ImgurClientRateLimitError, ImgurClientError
-from imgurpca import Post
-from imgurpca import User
-from imgurpca import Query
-from imgurpca import imutils
-from imgurpca.base import Molecular
-from imgurpca import utils
-from imgurpca import config
+from . import Post
+from . import User
+from . import Query
+from . import imutils
+from .base import Molecular
+from . import utils
+from . import config
 import numpy as np
 import sys
 

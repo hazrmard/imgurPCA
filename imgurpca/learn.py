@@ -1,10 +1,10 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpca.base import BaseLearner
-from imgurpca.base import Atomic
-from imgurpca import Post
-from imgurpca import Parser
+from .base import BaseLearner
+from .base import Atomic
+from . import Post
+from . import Parser
 from csv import reader, writer
 
 # The Learner class performs analysis on the data (particularly wordcounts) generated

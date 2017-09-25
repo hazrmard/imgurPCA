@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpca.base import utils
-from imgurpca.base import config
-from imgurpca.base import Parallel
+from . import utils
+from . import config
+from . import Parallel
 import numpy as np
 
 # The Molecular class (as in: a collection of atoms) is a container class for

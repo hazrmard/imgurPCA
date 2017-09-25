@@ -2,11 +2,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
-from imgurpca.base import Atomic
-from imgurpca.base import Molecular
-from imgurpca.base import DTree
-from imgurpca.base import utils
-from imgurpca.base import config
+from . import Atomic
+from . import Molecular
+from . import DTree
+from . import utils
+from . import config
 import numpy as np
 from csv import reader, writer
 from collections import deque

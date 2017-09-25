@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 
 # only import things that will be exposed in the main API
-from imgurpca.base import utils
-from imgurpca.base import config
-from imgurpca.query import Query
-from imgurpca.post import Post
-from imgurpca.user import User
-from imgurpca.parse import Parser
-from imgurpca.learn import Learner
-from imgurpca.bot import Bot
-from imgurpca import macros
+from .base import utils
+from .base import config
+from .query import Query
+from .post import Post
+from .user import User
+from .parse import Parser
+from .learn import Learner
+from .bot import Bot
+from . import macros

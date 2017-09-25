@@ -43,8 +43,8 @@ NUM_AXES = 2
 NUM_POINTS = 75
 client_secret = CS
 client_id = CID
-DEMO = True
-GET_NEW_AXES = False
+DEMO = False
+GET_NEW_AXES = True
 learner = Learner()
 past_choices = deque()      # indices to coords in chain
 

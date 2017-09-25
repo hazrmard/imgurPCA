@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
-from imgurpca.base import Molecular
-from imgurpca.base import Atomic
-from imgurpca.base import config
+from . import Molecular
+from . import Atomic
+from . import config
 from collections import deque
 import re
 import random

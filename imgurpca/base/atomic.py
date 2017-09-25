@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpca.base import utils
-from imgurpca.base import config
+from . import utils
+from . import config
 import numpy as np
 
 # Atomic is the base class that represents a single data point for learning

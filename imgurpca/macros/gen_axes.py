@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
-from imgurpca import Query
-from imgurpca import Parser
-from imgurpca import Learner
-from imgurpca import imutils
+from .. import Query
+from .. import Parser
+from .. import Learner
+from .. import imutils
 import numpy as np
 import sys
 

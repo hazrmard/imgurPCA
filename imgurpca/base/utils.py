@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpython import ImgurClient
-from imgurpca.base import config
+from . import config
 
 def flatten(container, lvl=1, accessor=lambda x: x):
     """convert arbitrarily nested arrays of comments into a flat array

@@ -1,7 +1,7 @@
 # for any utility functions that apply strictly to the imgur API and not generally
 # to parsing/learning etc.
 from imgurpython import ImgurClient
-from imgurpca import config
+from . import config
 
 def set_up_client(instance, **kwargs):
     """sets up self.client with ImgurClient instance given either client secret

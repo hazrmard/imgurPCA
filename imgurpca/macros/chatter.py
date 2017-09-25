@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
-from imgurpca.base import Molecular
-from imgurpca.base import Atomic
-from imgurpca.base import Markov
+from ..base import Molecular
+from ..base import Atomic
+from ..base import Markov
 import re
 
 # The Chatter class privides an interface to generate random comments and replies

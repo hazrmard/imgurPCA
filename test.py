@@ -22,8 +22,12 @@ SAMPLE_BOT = None
 TESTS_PASSED = 0
 TESTS_FAILED = 0
 
-CLIENT_SECRET = ''
-CLIENT_ID = ''
+try:
+    from myconfig import CS as CLIENT_SECRET
+    from myconfig import CID as CLIENT_ID
+except ImportError: # manually set secret and ID
+    CLIENT_SECRET = ''
+    CLIENT_ID = ''
 CLIENT = ImgurClient(CLIENT_ID, CLIENT_SECRET)
 
 try:

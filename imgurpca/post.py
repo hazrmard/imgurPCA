@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpca import utils
-from imgurpca import config
-from imgurpca import imutils
-from imgurpca.base import Atomic
+from . import utils
+from . import config
+from . import imutils
+from .base import Atomic
 import numpy as np
 
 # The Post class represents a single gallery item on imgur.com. Each post is

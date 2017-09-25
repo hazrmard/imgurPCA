@@ -2,10 +2,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from imgurpython.client import ImgurClientError
-from imgurpca import utils
-from imgurpca import config
-from imgurpca.base import Electronic
-from imgurpca import imutils
+from . import utils
+from . import config
+from .base import Electronic
+from . import imutils
 from glob import glob
 import threading
 import time

@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
-from imgurpca import Post
-from imgurpca import utils
-from imgurpca import config
+from . import Post
+from . import utils
+from . import config
 
 # User is a subclass of Post which represents comments made by an imgur user.
 # Each user is identified by the url attribute (alias: username) which must be
