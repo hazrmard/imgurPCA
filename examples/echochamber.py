@@ -12,24 +12,28 @@
 #
 # Use requires installation of imgurpca (https://github.com/hazrmard/imgurPCA)
 # Usage:
-#       >> python echochamber.py
+#       >> python examples/echochamber.py
 #
 # For first use, set DEMO=False and GET_NEW_AXES=True
 
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
+from collections import deque
+import math
+from argparse import ArgumentParser
+import numpy as np
+import matplotlib.pyplot as plt
+
 from imgurpca import Query
 from imgurpca import Parser
 from imgurpca import Learner
 from imgurpca.macros import gen_axes
 from imgurpython.helpers.error import ImgurClientError
-import numpy as np
-import matplotlib.pyplot as plt
-from collections import deque
-import math
+
 try:
-    from myconfig import *
+    from myconfig import CS, CID
 except ImportError:
     print('myconfig.my does not exist. Please create it with CS=client_secret and CID=client_id variables.')
     exit(-1)
@@ -94,8 +98,8 @@ def visualize(coords, choices, r):
     plt.show(block=False)
 
 
-if __name__=='__main__':
-    words=get_common_words('./filter.txt')
+if __name__ == '__main__':
+    words=get_common_words('./examples/filter.txt')
     if not DEMO and GET_NEW_AXES:    # downloaded during development
         q = Query(Query.TAG).params('politics').sort_by(Query.TOP).over(Query.ALL).construct()
         gen_axes(output=AXES_FILE, p=(0,1), n=10, remove=words, cs=client_secret, cid=client_id, verbose=True, query=q)
