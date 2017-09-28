@@ -20,6 +20,11 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+# add one directory up to PATH so imgurpca doesn't need to be installed to
+# run this script
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
 from collections import deque
 import math
 from argparse import ArgumentParser
