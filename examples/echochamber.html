@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+
+<body style="padding: 0px; margin: 0px; height: 100%; width: 100%">
+<svg style="height: 90%; width: 100%">
+
+</svg>
+
+<script>
+    {% autoescape false %}
+    CS = "{{ CS }}";
+    CID = "{{ CID }}";
+    {% endautoescape %}
+
+    var W = d3.select("svg")._groups[0][0].clientWidth;
+    var H = d3.select("svg")._groups[0][0].clientHeight;
+
+</script>
+</body>
+</html>

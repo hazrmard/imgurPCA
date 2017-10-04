@@ -30,6 +30,7 @@ import math
 from argparse import ArgumentParser
 import numpy as np
 import matplotlib.pyplot as plt
+import flask
 
 from imgurpca import Query
 from imgurpca import Parser
@@ -43,15 +44,28 @@ except ImportError:
     print('myconfig.my does not exist. Please create it with CS=client_secret and CID=client_id variables.')
     exit(-1)
 
-AXES_FILE = 'axes_demo.csv'
+# default arguments
+AXES_FILE = 'axes.csv'
 NUM_AXES = 2
 NUM_POINTS = 75
 client_secret = CS
 client_id = CID
-DEMO = False
-GET_NEW_AXES = True
 learner = Learner()
 past_choices = deque()      # indices to coords in chain
+
+# set up command-line interface
+ARGS = ArgumentParser(description='Echochamber demo.')
+ARGS.add_argument('-l', '--load', default=None, type=str, metavar='L.csv',
+                  help='Name of .csv file to load axes from. By default generates axes to: ' + AXES_FILE)
+ARGS.add_argument('-s', '--store', default=None, type=str, metavar='S.csv',
+                  help='Name of .csv file to write axes to. Default:' + AXES_FILE)
+ARGS.add_argument('-n', '--num-axes', default=NUM_AXES, type=int, metavar='N',
+                  help='Number of axes to generate.')
+ARGS.add_argument('-p', '--points', default=NUM_POINTS, type=int, metavar='P',
+                  help='Number of posts to use to generate axes.')
+ARGS.add_argument('-x', '--filter', default=None, type=str, metavar='X.txt',
+                  help='Path to newline delimted file containing words to filter out.')
+
 
 def get_common_words(fname):
     with open(fname, 'r') as f:
@@ -59,21 +73,6 @@ def get_common_words(fname):
     words = [w.strip() for w in words]
     return words
 
-def get_projections():
-    learner.load_axes(AXES_FILE)
-    learner.axes = learner.axes[:,0:NUM_AXES]
-    if DEMO:
-        return [c for c in np.random.randint(0,50, size=(NUM_POINTS, NUM_AXES))]
-    else:
-        q = Query(Query.RANDOM).construct()
-        p = Parser(cs=client_secret, cid=client_id)
-        p.get(q, pages=(0, math.ceil(NUM_POINTS/60)))
-        p.items = p.items[:NUM_POINTS]
-
-        projections = []
-        for item in p.items:
-            item.generate_word_counts()
-            projections.append(learner.project(item))
 
 def recommend(coords, choices):
     weighted_choices = [coords[c]/(n+1) for n,c in enumerate(reversed(choices))]
@@ -84,49 +83,16 @@ def recommend(coords, choices):
         r = np.argmax(distances[:r] + distances[r+1:])
     return r
 
-def visualize(coords, choices, r):
-    plt.clf()
-    labels = ['{0}'.format(i) for i in range(NUM_POINTS)]
-    plt.subplots_adjust(bottom = 0.1)
-    plt.scatter(
-        [d[0] for d in coords], [d[1] for d in coords], marker = 'o',
-        c = [100 if c in choices else 200 if c==r else 50 for c in range(NUM_POINTS)], s = 512,
-        cmap = plt.get_cmap('Spectral'))
-    for label, x, y in zip(labels, [d[0] for d in coords], [d[1] for d in coords]):
-        plt.annotate(
-            label,
-            xy = (x, y), xytext = (11, -11),
-            textcoords = 'offset points', ha = 'right', va = 'bottom',
-            # bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
-            # arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0')
-            )
-    plt.show(block=False)
+
+APP = flask.Flask(__name__)
 
 
 if __name__ == '__main__':
-    words=get_common_words('./examples/filter.txt')
-    if not DEMO and GET_NEW_AXES:    # downloaded during development
-        q = Query(Query.TAG).params('politics').sort_by(Query.TOP).over(Query.ALL).construct()
-        gen_axes(output=AXES_FILE, p=(0,1), n=10, remove=words, cs=client_secret, cid=client_id, verbose=True, query=q)
-
-    coords = get_projections()
-    if len(coords)==0:
-        exit(-1)
-
-    for i in range(NUM_AXES):
-        past_choices.append(i)
-    c= 0
-    while True:
-        while c in past_choices:
-            try:
-                c = int(raw_input('Enter choice: '))
-            except NameError:
-                c = int(input('Enter choice: '))
-        past_choices.popleft()
-        past_choices.append(c)
-        r = recommend(coords, past_choices)
-        print('Choices: ' + str(past_choices))
-        print('Recommendation: ' + str(r) + ';\tCoord: ' + str(coords[r]))
-
-        if NUM_AXES==2:
-            visualize(coords, past_choices, r)
+    ARGS = ARGS.parse_args()
+    
+    if ARGS.file is not None:
+        # load axes from file
+        pass
+    else:
+        # generate new axes
+        pass
