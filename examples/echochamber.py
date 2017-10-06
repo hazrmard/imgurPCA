@@ -40,7 +40,7 @@ from imgurpca.macros import gen_axes
 from imgurpython.helpers.error import ImgurClientError
 
 
-from myconfig import CS, CID, CS1, CID1
+from myconfig import CS, CID
 
 # default arguments
 AXES_FILE = 'axes.csv'
@@ -100,6 +100,10 @@ def get_common_words(fname):
 
 
 def recommend(coords, choices):
+    """
+    A redcommendation algorithm that takes previous choices from coords and
+    recommends the next choice in coord.
+    """
     weighted_choices = [coords[c]/(n+1) for n,c in enumerate(reversed(choices))]
     centroid = np.sum(weighted_choices, axis=0) / NUM_AXES
     distances = [np.dot(c-centroid, c-centroid) for c in coords]
@@ -109,19 +113,29 @@ def recommend(coords, choices):
     return r
 
 
-APP = flask.Flask(__name__)
-
 
 if __name__ == '__main__':
     A = ARGS.parse_args()
     P = Parser(cid=CID, cs=CS)
     L = Learner()
     
+    # Load or generate axes
     if A.load is not None:
         L.load_axes(A.load)
     else:
         filter_words = get_common_words(A.filter)
         gen_axes(output=A.save, remove=filter_words, n=A.points,
                       pages=(0, A.points // POSTS_PER_PAGE + 1), topn=A.words,
-                      verbose=True, query=A.query, cs=CS1, cid=CID1)
+                      verbose=True, query=A.query, cs=CS, cid=CID)
         L.load_axes(A.save)
+    
+    APP = flask.Flask(__name__, static_url_path='',
+                      static_folder=os.path.dirname(__file__),
+                      template_folder=os.path.dirname(__file__))
+
+    @APP.route('/')
+    def index():
+        """
+        Renders the page.
+        """
+        return flask.render_template('echochamber.html', CS=CS, CID=CID)
