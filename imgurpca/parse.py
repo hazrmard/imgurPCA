@@ -57,9 +57,6 @@ class Parser(Molecular):
     def content(self, flatten=True):
         """returns a generator (optionally flattened) of content attributes of
         User/Post objects in self.items.
-        @param flatten (bool): whether to flatten nested comments
-        @param accessor (func): a function that returns reference to nested
-                                elements.
         Returns a list (nested if flatten=False) of comment objects.
         """
         return super(Parser, self).content(flatten, accessor=lambda x: x.children)

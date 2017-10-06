@@ -9,25 +9,25 @@ import numpy as np
 import sys
 
 
-def gen_axes(output=None, remove=[], p=(0,3), n=150, topn=50, verbose=False, query=None, **kwargs):
+def gen_axes(cs, cid, output=None, remove=[], pages=(0,3), n=150, topn=50, verbose=False, query=None):
     """generate axes from comments on gallery random section, first 2 pages, top
     n posts, sorted by top, over 1 week. axes are generated from the top 25
     words with the largest variance / mean ratio.
     @param cid (string): client id, use with 'cs'
     @param cs (string): client secret, use with 'cid'.
     @param n (int): # of posts
-    @param p (int/tuple): page number / range of pages to download
+    @param pages (int/tuple): page number / range of pages to download
     @param topn (int): # of words to use in axes generation
     @param query (Query): Query instance with construct() called
     @param remove (list): collection of words to filter out
-    OR:
-    @param client (ImgurClient): imgurpython.ImgurClient instance
     """
-    p = Parser(**kwargs)        # set up parser with client
+    p = Parser(cs=cs, cid=cid)        # set up parser with client
     q = Query(Query.RANDOM).construct() if query is None else query
     if __name__=='__main__' or verbose:
-        print('Downloading posts...')
-    p.get(q, pages=p)           # get post ids + metadata based on query
+        print('Downloading posts for: ', q)
+    p.get(q, pages=pages)           # get post ids + metadata based on query
+    if __name__=='__main__' or verbose:
+        print('Downloaded %d posts over %s pages' % (len(p.items), pages))
     p.items = p.items[:n]
     p.download()                # download post comments
 
@@ -38,10 +38,10 @@ def gen_axes(output=None, remove=[], p=(0,3), n=150, topn=50, verbose=False, que
         post.generate_word_counts()
         post.filter_by_word(remove, reverse=True)
 
-    p.items = [x for x in p.items if len(x.wordcount)]  # in case rate limit prevents comment download
+    p.items = [post for post in p.items if len(post.wordcount)]  # in case rate limit prevents comment download
     if len(p.items)==0:
-        print('No posts could be downloaded due to Rate Limits. Try later.')
-        return
+        print('No posts could be downloaded.')
+        exit(-1)
 
 
     p.consolidate()             # make words uniform across posts

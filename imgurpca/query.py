@@ -58,7 +58,7 @@ class Query(object):
         self._q_params = None      # compiled parameters
 
     def __str__(self):
-        r = '< Query: ' + Query._rep_dict[self._what] + ' '
+        r = '<Query: ' + Query._rep_dict[self._what] + ' '
         if self._sort_by:
             r += '- Sort by: ' + str(self._sort_by) + ' '
         if self._over:
@@ -67,6 +67,9 @@ class Query(object):
             r += '- Params: ' + str(self._q) + ' '
         r += '>'
         return r
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def mode(self):
@@ -156,3 +159,4 @@ class Query(object):
             return self
         elif self._what is None or self._sort_by is not None:
             raise config.InvalidArgument('Invalid Query mode and sort-by combination.')
+        return self
