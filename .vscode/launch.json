@@ -1,0 +1,25 @@
+{
+    "configurations": [
+    {
+            "name": "EchochamberDemo",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${workspaceRoot}/examples/echochamber.py",
+            "cwd": "${workspaceRoot}/examples",
+            "args": [
+                "--load", "axes.csv",
+                "--filter", "filter.txt"
+            ],
+            "env": {},
+            "envFile": "${workspaceRoot}/.env",
+            "debugOptions": [
+                "WaitOnAbnormalExit",
+                "WaitOnNormalExit",
+                "RedirectOutput"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

@@ -204,7 +204,7 @@ def test_word_filters(c):
     arr1 = np.array([('c',3),('d',4),('e',5)],dtype=config.DT_WORD_WEIGHT)
     arr2 = np.array([('a',1),('b',2)],dtype=config.DT_WORD_WEIGHT)
     p = Post('asd', wordcount=arr, client=c)
-    p.filter_by_word(['c','d','e'], reverse=False)
+    p.filter_by_word(['c','d','e', 'f'], reverse=False)
     q = Post('def',wordcount=brr, client=c)
     q.filter_by_word(['c','d','e'], reverse=True)
     if not (np.array_equal(p.wordcount,arr1) and np.array_equal(q.wordcount,arr2)):
@@ -292,6 +292,8 @@ def test_parser_consolidation(c):
     crr = np.array([('a',2),('b',4),('c',6),('d',8),('e',10), ('f', 6)],dtype=config.DT_WORD_WEIGHT)
     drr = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f',0)],dtype=config.DT_WORD_WEIGHT)
     err = np.array([('a',1),('b',2),('c',3),('d',4),('e',5), ('f',6)],dtype=config.DT_WORD_WEIGHT)
+    frr = np.array([('a',2),('b',4),('z',0)],dtype=config.DT_WORD_WEIGHT)
+    grr = np.array([('a',1),('b',2),('z', 0)],dtype=config.DT_WORD_WEIGHT)
     p1 = Post(id=1,client=c,wordcount=arr)
     p2 = Post(id=2,client=c,wordcount=brr)
     P = Parser(client=c,items=(p1,p2))
@@ -299,6 +301,13 @@ def test_parser_consolidation(c):
     assert np.array_equal(P.wordcount, crr), "Unexpected array output."
     assert np.array_equal(p1.wordcount, drr), "Unexpected array output."
     assert np.array_equal(p2.wordcount, err), "Unexpected array output."
+    p1 = Post(id=1,client=c,wordcount=arr)
+    p2 = Post(id=2,client=c,wordcount=brr)
+    P = Parser(client=c,items=(p1,p2))
+    P.consolidate(words=['a', 'b', 'z'], reverse=False)
+    assert np.array_equal(P.wordcount, frr), "Unexpected array output."
+    assert np.array_equal(p1.wordcount, grr), "Unexpected array output."
+    assert np.array_equal(p2.wordcount, grr), "Unexpected array output."
     global SAMPLE_PARSER
     if SAMPLE_PARSER is None:
         raise ValueError('Depends on population test success.')

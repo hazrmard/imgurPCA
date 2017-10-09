@@ -72,23 +72,25 @@ class Molecular(object):
                                 all wordcounts in self.items
         @param reverse (bool): True->filter out 'words', use everything else,
                                False->only use 'words', filter out everything else.
+                               Only matters if words provided.
         """
         if len(self.items)==0:
             raise config.PrematureFunctionCall('No User/Post objects in self.items.')
         word_dict = {}
-        if words is not None:           # initialize dict with acceptable words
-            word_dict = {w:0 for w in words}
-            for item in self.items:     # filter items using words
+        if words is not None:
+            if not reverse:                         # i.e. if only 'words' MUST be in wordcount
+                word_dict = {w:0 for w in words}    # then word_dict initialized w/ 'words'
+            for item in self.items:                 # filter (in/out) words from items
                 item.filter_by_word(words, reverse)
 
         for item in self.items:
             if item.wordcount is None:
                 raise config.PrematureFunctionCall('Generate wordcounts first.')
             for w in item.wordcount:
-                try:
+                try:                    # if word already exists, increment weight
                     word_dict[w['word']] += w['weight']
-                except KeyError:
-                    if words is None:   # otherwise skip word not in words
+                except KeyError:        # else add word if a strict word list not provided
+                    if words is None or reverse:
                         word_dict[w['word']] = w['weight']
         self.wordcount = np.array(list(word_dict.items()), dtype=config.DT_WORD_WEIGHT)
         self.wordcount.sort(order=[config.DEFAULT_SORT_ORDER])

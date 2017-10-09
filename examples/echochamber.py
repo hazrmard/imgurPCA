@@ -23,7 +23,14 @@ from __future__ import unicode_literals
 # add one directory up to PATH so imgurpca doesn't need to be installed to
 # run this script
 import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# absolute path of repository
+ABSPATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# absolute path to the template and static files folder
+TEMPLATEDIR = os.path.join(ABSPATH, 'examples')
+STATICDIR = TEMPLATEDIR
+# name of template file relative to TEMPLATEDIR
+TEMPLATEFILE = 'echochamber.html'
+sys.path.append(ABSPATH)
 
 from collections import deque
 import math
@@ -36,6 +43,7 @@ import flask
 from imgurpca import Query
 from imgurpca import Parser
 from imgurpca import Learner
+from imgurpca.imutils import QueryParser
 from imgurpca.macros import gen_axes
 from imgurpython.helpers.error import ImgurClientError
 
@@ -46,28 +54,13 @@ from myconfig import CS, CID
 AXES_FILE = 'axes.csv'
 NUM_AXES = 2
 NUM_POINTS = 75
+NUM_POSTS = 5
 POSTS_PER_PAGE = 60
 NUM_WORDS = 50
 DEFAULT_QUERY = Query(Query.GALLERY_TOP).over(Query.WEEK).sort_by(Query.TOP).construct()
+DEFAULT_REQUEST = Query(Query.GALLERY_HOT).sort_by(Query.VIRAL).construct()
 learner = Learner()
 past_choices = deque()      # indices to coords in chain
-
-
-class QueryParser(Action):
-    """
-    Parses query string passed by --query or -q option. Of the form:
-        WHAT [FunctionName1:Argument] [FunctionName2:Argument] ....
-    Where WHAT is the instantiation argument to Query() class.
-    Where FunctionName is one of Query.[sort_by, over, params], and Argument
-    is the argument passed to it. For example:
-        gallery_top over:day sort_by:hot
-    """
-    def __call__(self, parser, namespace, values, option_string=None):
-        query = Query(getattr(Query, values[0].upper()))
-        for val in values[1:]:
-            func, arg = val.split(':')
-            getattr(query, func.lower())(arg)
-        setattr(namespace, 'query', query.construct())
 
 
 
@@ -77,13 +70,17 @@ ARGS.add_argument('-l', '--load', default=None, type=str, metavar='L.csv',
                   help='Name of .csv file to load axes from. By default generates axes to: ' + AXES_FILE)
 ARGS.add_argument('-s', '--save', default=None, type=str, metavar='S.csv',
                   help='Name of .csv file to write axes to. Default:' + AXES_FILE)
-ARGS.add_argument('-n', '--num-axes', default=NUM_AXES, type=int, metavar='N',
+ARGS.add_argument('-a', '--axes', default=NUM_AXES, type=int, metavar='N',
                   help='Number of axes to generate.')
 ARGS.add_argument('-p', '--points', default=NUM_POINTS, type=int, metavar='P',
                   help='Number of posts to use to generate axes.')
+ARGS.add_argument('-m', '--posts', default=NUM_POSTS, type=int, metavar='M',
+                  help='Number of posts to project onto axes from request query.')
 ARGS.add_argument('-w', '--words', default=NUM_WORDS, type=int, metavar='W',
                   help='Number of top most frequent words to use to generate axes.')
 ARGS.add_argument('-q', '--query', default=DEFAULT_QUERY, type=str, metavar='Q', nargs='+',
+                  action=QueryParser, help='Query parameters: <WHAT> [Func1:Arg] ...')
+ARGS.add_argument('-r', '--request', default=DEFAULT_REQUEST, type=str, metavar='R', nargs='+',
                   action=QueryParser, help='Query parameters: <WHAT> [Func1:Arg] ...')
 ARGS.add_argument('-f', '--filter', default=None, type=str, metavar='F.txt',
                   help='Path to newline delimted file containing words to filter out.')
@@ -115,27 +112,64 @@ def recommend(coords, choices):
 
 
 if __name__ == '__main__':
-    A = ARGS.parse_args()
-    P = Parser(cid=CID, cs=CS)
-    L = Learner()
+    C = deque()                     # Choices: history of user choices
+    A = ARGS.parse_args()           # Arguments parsed from command line
+    Q = A.request                   # Query for requesting posts to project
+    P = Parser(cid=CID, cs=CS)      # Parser instance
+    L = Learner()                   # Learner instance
+    X = []                          # List of projection coordinates
+    F = get_common_words(A.filter)  # Filter: List of words to filter out.
     
     # Load or generate axes
     if A.load is not None:
         L.load_axes(A.load)
     else:
-        filter_words = get_common_words(A.filter)
-        gen_axes(output=A.save, remove=filter_words, n=A.points,
-                      pages=(0, A.points // POSTS_PER_PAGE + 1), topn=A.words,
-                      verbose=True, query=A.query, cs=CS, cid=CID)
+        
+        gen_axes(output=A.save, remove=F, n=A.points,
+                 pages=(0, A.points // POSTS_PER_PAGE + 1), topn=A.words,
+                 verbose=True, query=A.query, axes=A.axes, cs=CS, cid=CID)
         L.load_axes(A.save)
     
-    APP = flask.Flask(__name__, static_url_path='',
-                      static_folder=os.path.dirname(__file__),
-                      template_folder=os.path.dirname(__file__))
+    # Get initial posts to plot, and consolidate wordcounts
+    P.get(Q, pages=(0, A.posts // POSTS_PER_PAGE + 1))
+    P.items = P.items[:A.posts]
+    P.download()
+    for post in P.items:
+        post.generate_word_counts()
+    P.consolidate(words=F, reverse=True)
 
+    # Get initial projections
+    X = L.project(P)
+    
+    APP = flask.Flask(__name__, static_url_path='',
+                      static_folder=STATICDIR,
+                      template_folder=TEMPLATEDIR)
+    
     @APP.route('/')
     def index():
         """
         Renders the page.
         """
-        return flask.render_template('echochamber.html', CS=CS, CID=CID)
+        return flask.render_template(TEMPLATEFILE, CS=CS, CID=CID)
+
+
+    @APP.route('/axes/', methods=['POST'])
+    def axes(): pass
+
+
+    @APP.route('/query/')
+    def query(): pass
+
+
+    @APP.route('/choice/', methods=['POST'])
+    def choice(): pass
+
+
+    @APP.route('/recommend/')
+    def recommend(): pass
+
+    @APP.route('/update/')
+    def update(): pass
+
+
+    APP.run(debug=1)

@@ -8,14 +8,15 @@ from .. import Parser
 from .. import Learner
 
 
-def gen_axes(cs, cid, output=None, remove=[], pages=(0,3), n=150, topn=50,
+def gen_axes(cs, cid, output=None, remove=[], pages=(0,3), n=150, axes=2, topn=50,
              verbose=False, query=None):
     """
     Generate axes from comments on posts on imgur. Saves to .csv file which can
     be leaded by Learner class.
     @param cid (string): client id, use with 'cs'
     @param cs (string): client secret, use with 'cid'.
-    @param n (int): # of posts
+    @param n (int): # of posts to use to generate axes
+    @param axes (int): # of axes to generate (default=2)
     @param pages (int/tuple): page number / range of pages to download
     @param topn (int): # of words to use in axes generation
     @param query (Query): Query instance with construct() called
@@ -54,7 +55,7 @@ def gen_axes(cs, cid, output=None, remove=[], pages=(0,3), n=150, topn=50,
 
     # Generate axes using principal components
     l = Learner(source=p)
-    ax = l.get_axes()
+    ax = l.get_axes(n=axes)
 
     if output is not None:                  # store axes if filename specified
         l.save_axes(fname=output)

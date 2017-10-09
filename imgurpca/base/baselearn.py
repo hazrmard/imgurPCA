@@ -69,10 +69,11 @@ class BaseLearner(object):
         return self.axes
 
 
-    def get_axes(self):
+    def get_axes(self, n=-1):
         """get the eignevectors describing the wordcounts of the items in the
         Molecular given to Learner. For comment-wise vectors, use get_comment_eigenvectors()
         Returns 2D array (each row -> word weight in self.words, column -> axis vector)
+        @param n (int): Number of axes to get. Defaults to all eigenvectors.
         """
         if isinstance(self.source, Molecular):
             if self.source._consolidated:
@@ -84,7 +85,10 @@ class BaseLearner(object):
                 order = eiw.argsort()[::-1]
                 eiw = eiw[order]
                 eiv = eiv[:, order]                 # vals/vecs ordered by largest eval
-                self.axes = eiv
+                if n==-1:
+                    self.axes = eiv
+                else:
+                    self.axes = eiv[:, :n]
                 return self.axes
             else:
                 raise config.PrematureFunctionCall('Consolidate first.')

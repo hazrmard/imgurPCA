@@ -2,12 +2,40 @@
 <html>
 <head>
     <script src="https://d3js.org/d3.v4.min.js"></script>
+    <style> /* set cosmetic properties */
+        .line { 
+            stroke: steelblue;
+            stroke-width: 2;
+            fill: none;
+        }
+        html, body, .container {
+            padding: 0px;
+            margin: 0px;
+            height: 100%;
+            width: 100%;
+        }
+        svg, .options {
+            display: inline-block;
+            vertical-align: top;
+        }
+    </style>
 </head>
 
-<body style="padding: 0px; margin: 0px; height: 100%; width: 100%">
-<svg style="height: 90%; width: 100%">
+<body>
+<div class="container">
+<svg style="height: 75%; width: 75%"></svg>
+<div class="options" style="width: 23%; height: 100%; background-color: red">
+    <div class="query-options">
 
-</svg>
+    </div>
+    <div class="axes-options">
+            
+    </div>
+    <div class="log-options">
+            
+    </div>
+</div>
+</div>
 
 <script>
     {% autoescape false %}
@@ -17,6 +45,31 @@
 
     var W = d3.select("svg")._groups[0][0].clientWidth;
     var H = d3.select("svg")._groups[0][0].clientHeight;
+    var padding = (W > H ? W : H) / 20;
+
+    // Set up plotting
+    var graph = d3.select("svg").append("g")
+                    .attr("transform", "translate(" + padding + "," + padding + ")");
+    var yScale = d3.scaleLinear().domain([0, 1]).range([H - 2*padding, 0]).clamp(true);
+    var xScale = d3.scaleLinear().domain([0, 1]).range([0, W - 2*padding]).clamp(true);
+    var xAxis = d3.axisBottom(xScale);
+    var yAxis = d3.axisLeft(yScale);
+    var line = d3.line()
+                    .x(function(d, i) {return xScale(i)})
+                    .y(function(d, i) {return yScale(d)});
+    graph.append("g")
+            .attr("transform", "translate(" + 0 + "," + (H - 2*padding) + ")")
+            .call(xAxis);
+    graph.append("g")
+            .attr("class", "yaxis")
+            .call(yAxis);
+    var linePath = graph.append("path")
+                        .attr("class", "line");
+
+    // The update function requests new projections and re-plots
+    function update() {
+
+    }
 
 </script>
 </body>

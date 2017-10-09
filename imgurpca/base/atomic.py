@@ -61,8 +61,9 @@ class Atomic(object):
 
 
     def filter_by_word(self, words, reverse=False):
-        """if reverse=False, only keep elements in wordcount present in words,
-        else only keep elements in wordcount not in words.
+        """If reverse=False, keep elements present in wordcount AND in words.
+        If reverse=True, keep elements present in wordcount AND not in words.
+        
         @param words (list/array): a list of words in unicode
         """
         self.wordcount = self.wordcount[np.in1d(self.wordcount['word'], words,
