@@ -46,7 +46,7 @@ import flask
 from imgurpca import Query
 from imgurpca import Parser
 from imgurpca import Learner
-from imgurpca.imutils import QueryParser, get_credits
+from imgurpca.imutils import parse_query_to_instance, QueryParser, get_credits
 from imgurpca.macros import gen_axes
 from imgurpython.helpers.error import ImgurClientError
 
@@ -119,7 +119,6 @@ def recommend(coords, choices):
 if __name__ == '__main__':
     C = deque()                     # Choices: history of user choices
     A = ARGS.parse_args()           # Arguments parsed from command line
-    Q = A.request                   # Query for requesting posts to project
     P = Parser(cid=CID, cs=CS)      # Parser instance
     L = Learner()                   # Learner instance
     X = []                          # List of projection coordinates
@@ -146,8 +145,8 @@ if __name__ == '__main__':
         with open(PICKLEFILE, 'rb') as f:
             P.items = pickle.load(f)
     else:
-        print('Getting: ', Q)
-        P.get(Q, pages=(0, A.posts // POSTS_PER_PAGE + 1))
+        print('Getting: ', A.request)
+        P.get(A.request, pages=(0, A.posts // POSTS_PER_PAGE + 1))
         P.items = P.items[:A.posts]
         print('Downloading: %d' % len(P.items))
         P.download()
@@ -173,13 +172,33 @@ if __name__ == '__main__':
         """
         return flask.render_template(TEMPLATEFILE, CS=CS, CID=CID)
 
+    @APP.route('/update/')
+    def update():
+        return flask.jsonify(points=[list(x) for x in X],
+                             ids=[p.id for p in P.items],
+                             weights=[p.points for p in P.items],
+                             axesmin=list(np.min(X, axis=1)[:A.axes]),
+                             axesmax=list(np.max(X, axis=1)[:A.axes])
+                             )
 
     @APP.route('/axes/', methods=['POST'])
     def axes(): pass
 
 
-    @APP.route('/query/')
-    def query(): pass
+    @APP.route('/query/<qtext>')
+    def query(qtext):
+        print(qtext)
+        A.request = parse_query_to_instance(qtext).construct()
+        P.get(A.request, pages=(0, A.posts // POSTS_PER_PAGE + 1))
+        P.items = P.items[:A.posts]
+        P.download()
+        for post in P.items:
+            post.generate_word_counts()
+        P.consolidate(words=F, reverse=True)
+        X[:] = L.project(P)
+        return update()
+
+
 
 
     @APP.route('/choice/', methods=['POST'])
@@ -189,9 +208,6 @@ if __name__ == '__main__':
     @APP.route('/recommend/')
     def recommend(): pass
 
-    @APP.route('/update/')
-    def update():
-        return flask.jsonify(points=[list(x) for x in X])
 
 
     APP.run(debug=1)

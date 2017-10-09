@@ -20,6 +20,18 @@ def set_up_client(instance, **kwargs):
                             ' instance, or cid=CLIENT_ID and cs=CLIENT_SECRET')
 
 
+def parse_query_to_instance(qstring):
+    """
+    Parses a query string into a Query instance.
+    """
+    values = qstring.split()
+    query = Query(getattr(Query, values[0].upper()))
+    for val in values[1:]:
+        func, arg = val.split(':')
+        getattr(query, func.lower())(arg)
+    return query
+
+
 class QueryParser(Action):
     """
     Parses query string passed by a command line option. Of the form:
@@ -33,10 +45,7 @@ class QueryParser(Action):
     query from the command line.
     """
     def __call__(self, parser, namespace, values, option_string=None):
-        query = Query(getattr(Query, values[0].upper()))
-        for val in values[1:]:
-            func, arg = val.split(':')
-            getattr(query, func.lower())(arg)
+        query = parse_query_to_instance(values)
         if option_string is None:
             setattr(namespace, 'query', query.construct())
         else:
