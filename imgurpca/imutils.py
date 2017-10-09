@@ -1,5 +1,6 @@
 # for any utility functions that apply strictly to the imgur API and not generally
 # to parsing/learning etc.
+import time
 from argparse import Action
 from imgurpython import ImgurClient
 from . import config
@@ -40,3 +41,12 @@ class QueryParser(Action):
             setattr(namespace, 'query', query.construct())
         else:
             setattr(namespace, option_string.replace('-', ''), query.construct())
+
+
+def get_credits(client):
+    credits = client.credits
+    try:
+        credits['UserReset'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(credits['UserReset']))
+    except TypeError:
+        pass
+    return credits

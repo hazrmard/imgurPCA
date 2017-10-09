@@ -30,10 +30,13 @@ TEMPLATEDIR = os.path.join(ABSPATH, 'examples')
 STATICDIR = TEMPLATEDIR
 # name of template file relative to TEMPLATEDIR
 TEMPLATEFILE = 'echochamber.html'
+# path of pickled posts file
+PICKLEFILE = os.path.join(STATICDIR, 'posts.pickle')
 sys.path.append(ABSPATH)
 
 from collections import deque
 import math
+import pickle
 from argparse import ArgumentParser
 from argparse import Action
 import numpy as np
@@ -43,7 +46,7 @@ import flask
 from imgurpca import Query
 from imgurpca import Parser
 from imgurpca import Learner
-from imgurpca.imutils import QueryParser
+from imgurpca.imutils import QueryParser, get_credits
 from imgurpca.macros import gen_axes
 from imgurpython.helpers.error import ImgurClientError
 
@@ -84,6 +87,8 @@ ARGS.add_argument('-r', '--request', default=DEFAULT_REQUEST, type=str, metavar=
                   action=QueryParser, help='Query parameters: <WHAT> [Func1:Arg] ...')
 ARGS.add_argument('-f', '--filter', default=None, type=str, metavar='F.txt',
                   help='Path to newline delimted file containing words to filter out.')
+ARGS.add_argument('-x', '--demo', default=False, action='store_true',
+                  help='Demo flag. If specified, loads pre-downloaded posts to project.')
 
 
 def get_common_words(fname):
@@ -119,24 +124,40 @@ if __name__ == '__main__':
     L = Learner()                   # Learner instance
     X = []                          # List of projection coordinates
     F = get_common_words(A.filter)  # Filter: List of words to filter out.
+
+    credits = get_credits(P.client)
+    [print(x[0]+': '+str(x[1]),end='\n') for x in credits.items()]
+    if credits['UserRemaining']==0 and (A.load is None or not A.demo):
+        print('Usage limit exceeded. Retry after %s.' % credits['UserReset'])
+        exit(-1)
     
     # Load or generate axes
     if A.load is not None:
         L.load_axes(A.load)
-    else:
-        
+    else:  
         gen_axes(output=A.save, remove=F, n=A.points,
                  pages=(0, A.points // POSTS_PER_PAGE + 1), topn=A.words,
                  verbose=True, query=A.query, axes=A.axes, cs=CS, cid=CID)
         L.load_axes(A.save)
     
     # Get initial posts to plot, and consolidate wordcounts
-    P.get(Q, pages=(0, A.posts // POSTS_PER_PAGE + 1))
-    P.items = P.items[:A.posts]
-    P.download()
+    if A.demo:
+        print('Demo. Loading previously saved posts from %s' % PICKLEFILE)
+        with open(PICKLEFILE, 'rb') as f:
+            P.items = pickle.load(f)
+    else:
+        print('Getting: ', Q)
+        P.get(Q, pages=(0, A.posts // POSTS_PER_PAGE + 1))
+        P.items = P.items[:A.posts]
+        print('Downloading: %d' % len(P.items))
+        P.download()
+        print('Saving downloads to file for demo purposes: %s' % PICKLEFILE)
+        with open(PICKLEFILE, 'wb') as f:
+            pickle.dump(P.items, f)
     for post in P.items:
         post.generate_word_counts()
     P.consolidate(words=F, reverse=True)
+
 
     # Get initial projections
     X = L.project(P)
@@ -169,7 +190,8 @@ if __name__ == '__main__':
     def recommend(): pass
 
     @APP.route('/update/')
-    def update(): pass
+    def update():
+        return flask.jsonify(points=[list(x) for x in X])
 
 
     APP.run(debug=1)

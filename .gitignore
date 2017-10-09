@@ -68,3 +68,4 @@ clientinfo.txt
 myconfig.py
 my.cred
 test.cred
+*.pickle

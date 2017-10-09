@@ -10,7 +10,8 @@
             "cwd": "${workspaceRoot}/examples",
             "args": [
                 "--load", "axes.csv",
-                "--filter", "filter.txt"
+                "--filter", "filter.txt",
+                "--demo"
             ],
             "env": {},
             "envFile": "${workspaceRoot}/.env",

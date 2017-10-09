@@ -55,13 +55,12 @@ def test(fn):
 
 def print_credits():
     global CLIENT
-    credits = CLIENT.credits
-    try:
-        credits['UserReset'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(credits['UserReset']))
-    except TypeError:
-        pass
+    credits = imutils.get_credits(CLIENT)
     [print(x[0]+': '+str(x[1]),end='; ') for x in credits.items()]
-    print('\n')
+    print()
+    if credits['UserRemaining']==0:
+        print('Usage limit exceeded. Retry after %s.' % credits['UserReset'])
+        exit(-1)
 
 
 @test

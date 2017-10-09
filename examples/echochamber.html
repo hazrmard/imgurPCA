@@ -24,7 +24,7 @@
 <body>
 <div class="container">
 <svg style="height: 75%; width: 75%"></svg>
-<div class="options" style="width: 23%; height: 100%; background-color: red">
+<div class="options" style="width: 23%; height: 100%">
     <div class="query-options">
 
     </div>
@@ -68,7 +68,9 @@
 
     // The update function requests new projections and re-plots
     function update() {
-
+        d3.json('/update/', function(data) {
+            console.log(data);
+        })
     }
 
 </script>
