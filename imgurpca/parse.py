@@ -71,10 +71,13 @@ class Parser(Molecular):
         self.items = []
         try:
             if isinstance(pages, int):
-                self.items.extend(source_func(page=pages, **query.content))
-            elif isinstance(pages, (tuple,list)):
+                pages = (pages,)
+            if isinstance(pages, (tuple,list)):
                 for i in range(*pages):
-                    self.items.extend(source_func(page=i, **query.content))
+                    res = source_func(page=i, **query.content)
+                    if hasattr(res, 'items'):
+                        res = res.items
+                    self.items.extend(res)
         except ImgurClientRateLimitError:
             print('Rate limit exceeded. get() incomplete.', file=sys.stderr)
         finally:

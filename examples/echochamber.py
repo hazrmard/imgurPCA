@@ -42,10 +42,12 @@ from argparse import Action
 import numpy as np
 import matplotlib.pyplot as plt
 import flask
+import requests
 
 from imgurpca import Query
 from imgurpca import Parser
 from imgurpca import Learner
+from imgurpca import config
 from imgurpca.imutils import parse_query_to_instance, QueryParser, get_credits
 from imgurpca.macros import gen_axes
 from imgurpython.helpers.error import ImgurClientError
@@ -95,6 +97,8 @@ def get_common_words(fname):
     """
     reads a newline delimited file for words to ignore in analysis.
     """
+    if fname is None:
+        return []
     with open(fname, 'r') as f:
         words = f.readlines()
     words = [w.strip() for w in words]
@@ -121,7 +125,6 @@ if __name__ == '__main__':
     A = ARGS.parse_args()           # Arguments parsed from command line
     P = Parser(cid=CID, cs=CS)      # Parser instance
     L = Learner()                   # Learner instance
-    X = []                          # List of projection coordinates
     F = get_common_words(A.filter)  # Filter: List of words to filter out.
 
     credits = get_credits(P.client)
@@ -133,6 +136,7 @@ if __name__ == '__main__':
     # Load or generate axes
     if A.load is not None:
         L.load_axes(A.load)
+        L.axes = L.axes[:, :A.axes]
     else:  
         gen_axes(output=A.save, remove=F, n=A.points,
                  pages=(0, A.points // POSTS_PER_PAGE + 1), topn=A.words,
@@ -155,11 +159,8 @@ if __name__ == '__main__':
             pickle.dump(P.items, f)
     for post in P.items:
         post.generate_word_counts()
+        post.normalize()
     P.consolidate(words=F, reverse=True)
-
-
-    # Get initial projections
-    X = L.project(P)
     
     APP = flask.Flask(__name__, static_url_path='',
                       static_folder=STATICDIR,
@@ -174,34 +175,57 @@ if __name__ == '__main__':
 
     @APP.route('/update/')
     def update():
+        prefix = 'https://imgur.com/gallery/'
+        X = L.project(P)
         return flask.jsonify(points=[list(x) for x in X],
-                             ids=[p.id for p in P.items],
-                             weights=[p.points for p in P.items],
-                             axesmin=list(np.min(X, axis=1)[:A.axes]),
-                             axesmax=list(np.max(X, axis=1)[:A.axes])
-                             )
+                             urls=[prefix+p.id for p in P.items],
+                             weights=[len(p.comments) for p in P.items],
+                             axesmin=list(np.min(X, axis=0)[:A.axes]),
+                             axesmax=list(np.max(X, axis=0)[:A.axes])
+                            )
 
-    @APP.route('/axes/', methods=['POST'])
-    def axes(): pass
+    @APP.route('/axes/')
+    def axes():
+        ax = []
+        ax.append(flask.request.args.get('xaxis', default=''))
+        ax.append(flask.request.args.get('yaxis', default=''))
+        formatted_axes = []
+        for i, axis in enumerate(ax):
+            if len(axis) == 0:
+                formatted_axes.append(np.array(list(zip(L.words, L.axes[:, i])),
+                                               dtype=config.DT_WORD_WEIGHT))
+            else:
+                tokens = [tuple(t.split(':')) for t in axis.split()]
+                formatted_axes.append(np.array(tokens, dtype=config.DT_WORD_WEIGHT))
+        L.set_axes(formatted_axes, consolidated=False)
+        return update()
 
 
-    @APP.route('/query/<qtext>')
-    def query(qtext):
-        print(qtext)
-        A.request = parse_query_to_instance(qtext).construct()
+    @APP.route('/query/')
+    def query():
+        qtext = flask.request.args.get('q', default='')
+        posts = flask.request.args.get('n', default=A.posts, type=int)
+        A.posts = posts
+        if len(qtext) > 0:
+            A.request = parse_query_to_instance(qtext).construct()
         P.get(A.request, pages=(0, A.posts // POSTS_PER_PAGE + 1))
         P.items = P.items[:A.posts]
         P.download()
         for post in P.items:
             post.generate_word_counts()
+            post.normalize()
         P.consolidate(words=F, reverse=True)
-        X[:] = L.project(P)
         return update()
 
 
+    @APP.route('/get/')
+    def get():
+        url = flask.request.args.get('url')
+        return requests.get(url).text
 
 
-    @APP.route('/choice/', methods=['POST'])
+
+    @APP.route('/choice/')
     def choice(): pass
 
 

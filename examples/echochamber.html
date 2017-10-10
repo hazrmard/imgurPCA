@@ -18,28 +18,45 @@
             display: inline-block;
             vertical-align: top;
         }
+        .options * {
+            display: block;
+        }
+        .options div, .options input[type="text"], .options input[type="range"] {
+            width: 100%;
+        }
+        iframe {
+            transform: scale(0.75, 0.75);
+            transform-origin: top left;
+            width: 200%;
+            height: 100%;
+        }
     </style>
 </head>
 
 <body>
-    <iframe style="position: absolute; display: none;"></iframe>
 <div class="container">
-<svg style="height: 75%; width: 75%"><g>
-    <circle cx="100" cy="100" r="10" fill="blue"></circle>
-    <circle cx="200" cy="300" r="20" fill="blue"></circle>
-    <circle cx="500" cy="500" r="30" fill="blue"></circle>
+<svg style="height: 75%; width: 60%"><g class="graph">
+    <!-- <circle cx="100" cy="100" r="10" fill="blue"></circle>
+    <circle cx="200" cy="300" r="10" fill="blue"></circle>
+    <circle cx="500" cy="500" r="10" fill="blue"></circle> -->
 </g></svg>
-<div class="options" style="width: 23%; height: 100%">
+<div class="options" style="width: 30%; height: 100%">
     <div class="query-options">
-        <input id="query" type="text" placeholder="Query"></input>
-        <input id="btnQuery" type="button" value="Get"></input>
+        <input id="txtQuery" type="text" placeholder="Query"></input>
+        <input type="range" min="1" max="60" value="5" class="slider" id="range">
+        <input id="btnQuery" type="button" value="Get Posts"></input>
     </div>
     <div class="axes-options">
-            
+        <label for="txtXaxis">X-axis</label>
+        <input id="txtXaxis" type="text" placeholder="word:weight ..."></input>
+        <label for="txtYaxis">Y-axis</label>
+        <input id="txtYaxis" type="text" placeholder="word:weight ..."></input>
+        <input id="btnAxes" type="button" value="Set Axes"></input>
     </div>
     <div class="log-options">
             
     </div>
+    <iframe id="iframe"></iframe>
 </div>
 </div>
 
@@ -49,14 +66,15 @@
     CID = "{{ CID }}";
     {% endautoescape %}
 
-    var W = d3.select("svg")._groups[0][0].clientWidth;
-    var H = d3.select("svg")._groups[0][0].clientHeight;
-    var padding = (W > H ? W : H) / 20;
-    var timeout = 1000;
+    var W = d3.select("svg")._groups[0][0].clientWidth;  // svg height
+    var H = d3.select("svg")._groups[0][0].clientHeight; // svg width
+    var padding = (W > H ? W : H) / 20;     // svg's top/left padding
+    var timeout = 1000;         // duration of animations
+    var src = "";               // url to iframe display
 
     // Set up plotting
-    var graph = d3.select("svg").select("g")
-                    .attr("transform", "translate(" + padding + "," + padding + ")");
+    var graph = d3.select(".graph")
+                  .attr("transform", "translate(" + padding + "," + padding + ")");
     var yScale = d3.scaleLinear().domain([0, 1]).range([H - 2*padding, 0]).clamp(true);
     var xScale = d3.scaleLinear().domain([0, 1]).range([0, W - 2*padding]).clamp(true);
     var xAxis = d3.axisBottom(xScale);
@@ -92,25 +110,54 @@
                 .transition().duration(timeout)
                 .attr("cx", function (d) {return xScale(d[0])})
                 .attr("cy", function (d) {return yScale(d[1])})
-                .attr("r", function (d, i) {return Math.ceil(Math.log10(data.weights[i])) + "px"})
+                .attr("r", function (d, i) {return 2*Math.sqrt(data.weights[i]) + "px"})
                 .attr("fill", "red");
         graph.selectAll("circle")
-            .data(data.points).enter().append("circle")
-            .transition().delay(timeout).duration(0)
-            .attr("cx", function (d) {return xScale(d[0])})
-            .attr("cy", function (d) {return yScale(d[1])})
-            .attr("r", "0px")
-            .transition().duration(timeout)
-                .attr("r", function (d, i) {return 5*Math.ceil(Math.log(data.weights[i])) + "px"})
-                .attr("fill", "red");
+                .data(data.points).enter().append("circle")
+                .transition().delay(timeout).duration(0)
+                .attr("cx", function (d) {return xScale(d[0])})
+                .attr("cy", function (d) {return yScale(d[1])})
+                .transition().duration(timeout)
+                    .attr("r", function (d, i) {return 2*Math.sqrt(data.weights[i]) + "px"})
+                    .attr("fill", "red");
         graph.selectAll("circle")
-            .data(data.points).exit().remove();
+                .data(data.points).exit().remove();
+        
+        // add mouse interactivity
+        graph.selectAll("circle")
+            .on("mouseover", function (d, i) {
+                if (src != data.urls[i]) {
+                    src = data.urls[i];
+                    d3.request("/get/?url=" + data.urls[i], function(res) {
+                        document.getElementById("iframe").contentWindow.document.write(res.responseText);
+                        document.getElementById("iframe").contentWindow.document.close();
+                    });
+                }
+            });
     }
 
+    // get new posts from query
     document.getElementById("btnQuery").onclick = function() {
-        queryPath = "/query/" + encodeURIComponent(document.getElementById("query").value);
+        queryPath = "/query/?q=" + encodeURIComponent(document.getElementById("txtQuery").value)
+                         + "&n=" + document.getElementById("range").value;
+        graph.selectAll("circle")
+                .transition().duration(timeout)
+                .attr("r", "0px");
         d3.json(queryPath, update);
     }
+
+    // set new axes and project existing posts
+    document.getElementById("btnAxes").onclick = function() {
+        var x = encodeURIComponent(document.getElementById("txtXaxis").value);
+        var y = encodeURIComponent(document.getElementById("txtYaxis").value);
+        var queryPath = "/axes/?" + (x.length ? ("xaxis="+x) : "") +
+                                    (x.length>0 && y.length>0 ? "&" : "") +
+                                    (y.length ? ("&yaxis="+y) : "");
+        d3.json(queryPath, update);
+    }
+
+    // call initial update
+    d3.json('/update/', update)
 
 </script>
 </body>
