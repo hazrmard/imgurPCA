@@ -2,7 +2,7 @@
 <html>
 <head>
     <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script src="https://raw.githubusercontent.com/jasondavies/d3-cloud/master/build/d3.layout.cloud.js"></script>
+    <script src="https://rawgit.com/jasondavies/d3-cloud/master/build/d3.layout.cloud.js"></script>
     <style> /* set cosmetic properties */
         .line { 
             stroke: steelblue;
@@ -17,6 +17,7 @@
         circle:hover {
             fill-opacity: 0.8;
             stroke: rgb(143, 203, 252);
+            cursor: crosshair;
         }
         html, body, .container {
             padding: 0px;
@@ -38,6 +39,11 @@
         .svgCloud {
             height: 25%;
             width: 100%;
+            transition-duration: 0.25s;
+        }
+        .svgCloud text:hover {
+            stroke: black;
+            cursor: pointer;
         }
         .options {
             width: 30%;
@@ -53,7 +59,7 @@
         iframe {
             transform: scale(0.75, 0.75);
             transform-origin: top left;
-            width: 175%;
+            width: 150%;
             height: 100%;
         }
     </style>
@@ -67,7 +73,7 @@
             <circle cx="200" cy="300" r="10" fill="blue"></circle>
             <circle cx="500" cy="500" r="10" fill="blue"></circle> -->
         </g></svg>
-        <svg class="svgCloud"></svg>
+        <svg class="svgCloud"><g></g></svg>
     </div>
     <div class="options">
         <div class="query-options">
@@ -205,21 +211,23 @@
             })
     }
 
-    function wordCloud(words) {
-        console.log(words);
+    function wordCloud(data) {
+        console.log(data);
         var w = svgCloud._groups[0][0].clientWidth;  // cloud svg height
         var h = svgCloud._groups[0][0].clientHeight; // cloud svg width
-        var fill = d3.scale.category20();
+        var fill = d3.scaleSequential(d3.interpolateRainbow).domain(data.domain);
         var layout = d3.layout.cloud()
-        .size([w, h])
-        .words(words)
+        layout.size([w, h])
+        .words(data.words)
         .padding(5)
-        .rotate(function() { return ~~(Math.random() * 2) * 90; })
+        // .rotate(function() { return ~~(Math.random() * 2) * 90; })
         .font("Impact")
-        .fontSize(function(d) { return d.size; })
+        .fontSize(function(d) { return d.size;})
         .on("end", function (words) {
-            svgCloud
-            .append("g")
+            svgCloud.select("g")
+            .selectAll("text")
+              .remove()
+            svgCloud.select("g")
                 .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
             .selectAll("text")
               .data(words)
@@ -233,6 +241,7 @@
                 })
                 .text(function(d) { return d.text; });
         });
+        layout.start()
 
     }
 
@@ -240,11 +249,14 @@
     document.getElementById("btnQuery").onclick = function() {
         queryPath = "/query/?q=" + encodeURIComponent(document.getElementById("txtQuery").value)
                          + "&n=" + document.getElementById("range").value;
-        graph.selectAll("circle")
+        svgGraph.selectAll("circle")
                 .transition().duration(timeout)
                 .attr("r", "0px");
+        svgCloud.selectAll("text")
+                .transition().duration(timeout)
+                .style("font-size", "0px");
         d3.json(queryPath, update);
-        d3.json('/words/?n=20', wordCloud);
+        d3.json('/words/?n=50&b=20', wordCloud);
     }
 
     // set new axes and project existing posts
@@ -259,7 +271,7 @@
 
     // call initial update
     d3.json('/update/', update);
-    d3.json('/words/?n=20', wordCloud);
+    d3.json('/words/?n=50&?b=20', wordCloud);
 
 </script>
 </body>

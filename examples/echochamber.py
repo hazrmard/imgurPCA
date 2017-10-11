@@ -197,8 +197,10 @@ APP = flask.Flask(__name__, static_url_path='',
 @APP.route('/')
 def index():
     """
-    Renders the page.
+    Renders the page. Resets choice history.
     """
+    A.choices = []
+    A.rec = np.array([])
     return flask.render_template(TEMPLATEFILE, CS=CS, CID=CID)
 
 @APP.route('/update/')
@@ -296,10 +298,20 @@ def words():
     """
     returns an array of objects of the form [{word:weight}...] ordered
     by descending weight. Used to make word cloud by client.
+    Returns a JSON with 2 fields:
+        - domain: containing min and max values for word sizes,
+        - words: an array of objects with text & size fields 
     """
-    num = flask.request.args.get('n', default=20, type=int)
+    num = flask.request.args.get('n', default=50, type=int)
+    bins = flask.request.args.get('n', default=20, type=int)
     warr = np.sort(P.wordcount, order='weight')[-num:]
-    return flask.jsonify([{'text':w[0], 'size':w[1]} for w in warr])
+    warr['weight'] = np.sqrt(warr['weight'])
+    mi = np.min(warr['weight'])
+    ma = np.max(warr['weight'])
+    step = (ma - mi) / bins
+    warr['weight'] = np.digitize(warr['weight'], np.arange(mi, ma, step))
+    return flask.jsonify(words=[{'text':w[0], 'size':w[1]} for w in warr],
+                         domain=[mi, ma])
 
 
 APP.run(debug=1)
