@@ -20,13 +20,12 @@ def set_up_client(instance, **kwargs):
                             ' instance, or cid=CLIENT_ID and cs=CLIENT_SECRET')
 
 
-def parse_query_to_instance(qstring):
+def parse_query_to_instance(tokens):
     """
     Parses a query string into a Query instance.
     """
-    values = qstring.split()
-    query = Query(getattr(Query, values[0].upper()))
-    for val in values[1:]:
+    query = Query(getattr(Query, tokens[0].upper()))
+    for val in tokens[1:]:
         func, arg = val.split(':')
         getattr(query, func.lower())(arg)
     return query
@@ -49,7 +48,7 @@ class QueryParser(Action):
         if option_string is None:
             setattr(namespace, 'query', query.construct())
         else:
-            setattr(namespace, option_string.replace('-', ''), query.construct())
+            setattr(namespace, self.dest, query.construct())
 
 
 def get_credits(client):

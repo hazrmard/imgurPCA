@@ -149,8 +149,8 @@ def test_structure_flattening(c):
 @test
 def test_sentence_sanitation(c):
     """check if sentences can be correctly decomposed into words"""
-    s = 'THE QuiCK !brOWn.'
-    expected = ['the', 'quick', '!brown.']
+    s = 'THE QuiCK !brO-Wn.'
+    expected = ['the', 'quick', 'brown']
     res = utils.sanitize(s)
     if res != expected:
         raise ValueError('Unexpected sentence decomposition.')

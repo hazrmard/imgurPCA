@@ -29,7 +29,7 @@ def gen_axes(cs, cid, output=None, remove=[], pages=(0,3), n=150, axes=2, topn=5
         print('Downloading posts for: ', q)
     p.get(q, pages=pages)                   # get post ids + metadata based on query
     if __name__=='__main__' or verbose:
-        print('Downloading %d posts over %s pages...' % (len(p.items), pages))
+        print('Downloading %d posts over %s pages...' % (n, pages))
     p.items = p.items[:n]
     p.download()                            # download post comments
 

@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
+import re
 from . import config
 
 def flatten(container, lvl=1, accessor=lambda x: x):
@@ -20,7 +21,7 @@ def sanitize(sentence):
     """takes a sentence and returns a list of words
     @param sentence (str): a string
     """
-    sentence = sentence.lower() # to lower case
+    sentence = re.sub(r'[^\w\s]', '', sentence.lower()) # to lower case
     words = sentence.split()    # split on whitespace
     words = [w[:config.MAX_WORD_LENGTH] for w in words]
     return words
