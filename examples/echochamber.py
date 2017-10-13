@@ -64,6 +64,7 @@ NUM_POINTS = 75
 NUM_POSTS = 5
 POSTS_PER_PAGE = 60
 NUM_WORDS = 50
+DEFAULT_REC = 'centroid'
 DEFAULT_QUERY = Query(Query.GALLERY_TOP).over(Query.WEEK).sort_by(Query.TOP).construct()
 DEFAULT_REQUEST = Query(Query.GALLERY_HOT).sort_by(Query.VIRAL).construct()
 learner = Learner()
@@ -94,10 +95,12 @@ ARGS.add_argument('-d', '--demo', default=False, action='store_true',
                   help='Demo flag. Loads cached posts to project. Default: False')
 ARGS.add_argument('-c', '--cache', default=PICKLEFILE, nargs=1, type=str, metavar='C.pickle',
                   help='Cached posts file to save/load for demo. Default: ' + PICKLEFILE)
+ARGS.add_argument('--rscheme', default=DEFAULT_REC, nargs=1, type=str, metavar='REC',
+                  help='Recommendation scheme to use for choices. Default: ' + DEFAULT_REC)
 ARGS.add_argument('--axes-only', default=False, action='store_true',
                   help='If specified, exits after generating new axes.')
 
-
+# Define utility functions
 def get_common_words(fname):
     """
     reads a newline delimited file for words to ignore in analysis.
@@ -109,8 +112,8 @@ def get_common_words(fname):
     words = [w.strip() for w in words]
     return words
 
-
-def recommend(coords, choices):
+# Define various recommendation functions
+def rec_centroid(coords, choices):
     """
     A redcommendation algorithm that takes previous choices from coords and
     recommends the next choice in coord.
@@ -126,17 +129,26 @@ def recommend(coords, choices):
     mag = np.linalg.norm(deltas, axis=1)    # vector magnitudes
     mag[choices] = 0                        # ignoring prior choices' distances to get [0-1] scale
     m = np.max(mag)                         # normalization factor
-    m = 1 if m==0 else m                    # division by 0 edge case                   
-    # magn = np.arccos(mag / m) / (np.pi / 2)
+    m = 1 if m==0 else m                    # division by 0 edge case
     magn = mag / m
-    return magn
+    return {'rec': magn, 'centroid': tuple(centroid)}
+
+
+# The endpoint for all recommendation functions
+def recommend(method, *args, **kwargs):
+    """
+    Common endpoint for all recommendation functions. Called when servicing
+    various client requests by the Flask app.
+    """
+    if method == 'centroid':
+        return rec_centroid(*args, **kwargs)
 
 
 
 A = ARGS.parse_args()           # Arguments parsed from command line
 setattr(A, 'proj', np.array([]))# set A.proj as reference to projections of posts
 setattr(A, 'choices', [])       # set A.choices as reference to history
-setattr(A, 'rec', np.array([])) # set A.rec as array of recommendation values
+setattr(A, 'rec', {})           # set A.rec as dict of recommendation parameters
 P = Parser(cid=CID, cs=CS)      # Parser instance
 L = Learner()                   # Learner instance
 F = get_common_words(A.filter)  # Filter: List of words to filter out.
@@ -216,7 +228,7 @@ def update():
                             weights=[len(p.comments) for p in P.items],
                             axesmin=list(np.min(A.proj, axis=0)[:A.axes]),
                             axesmax=list(np.max(A.proj, axis=0)[:A.axes]),
-                            rec=list(A.rec)
+                            **A.rec
                         )
 
 @APP.route('/axes/')
@@ -241,8 +253,8 @@ def axes():
             formatted_axes.append(np.array(tokens, dtype=config.DT_WORD_WEIGHT))
     L.set_axes(formatted_axes, consolidated=False)
     A.proj = L.project(P)
-    if len(A.choices):
-        A.rec = recommend(A.proj, A.choices)
+    if len(A.choices):  # calculate recommendation based on new projections
+        A.rec = recommend(A.rscheme, A.proj, A.choices)
     return update()
 
 
@@ -289,7 +301,7 @@ def choice():
     """
     cindex = flask.request.args.get('c', type=int)
     A.choices.append(cindex)
-    A.rec = recommend(A.proj, A.choices)
+    A.rec = recommend(A.rscheme, A.proj, A.choices)
     return update()
 
 
