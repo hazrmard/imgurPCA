@@ -113,25 +113,26 @@ def get_common_words(fname):
     return words
 
 # Define various recommendation functions
-def rec_centroid(coords, choices):
+def rec_centroid(points, choices):
     """
-    A redcommendation algorithm that takes previous choices from coords and
+    A redcommendation algorithm that takes previous choices from points and
     recommends the next choice in coord.
     Args:
-        choices (list/array): Indices into coords representing choice history.
-        coords (array): Coordinates/projections of posts on axes.
+        choices (list/array): Indices into points representing choice history.
+        points (array): Coordinates/projections of posts on axes.
     Returns:
-        An array representing suitability of coordinates as next choice.
-        Ranges from [0, 1]
+        A dict of 'rec': a list representing suitability of coordinates as next
+        choice rangeing from [0, 1], and 'centroid': a tuple containing x,y points
+        of centroid.
     """
-    centroid = np.average(coords[choices], axis=0, weights=np.arange(1, len(choices)+1))
-    deltas = coords - centroid              # vectors from centroid
+    centroid = np.average(points[choices], axis=0, weights=np.arange(1, len(choices)+1))
+    deltas = points - centroid              # vectors from centroid
     mag = np.linalg.norm(deltas, axis=1)    # vector magnitudes
     mag[choices] = 0                        # ignoring prior choices' distances to get [0-1] scale
     m = np.max(mag)                         # normalization factor
     m = 1 if m==0 else m                    # division by 0 edge case
     magn = mag / m
-    return {'rec': magn, 'centroid': tuple(centroid)}
+    return {'rec': list(magn), 'centroid': tuple(centroid)}
 
 
 # The endpoint for all recommendation functions
@@ -212,22 +213,23 @@ def index():
     Renders the page. Resets choice history.
     """
     A.choices = []
-    A.rec = np.array([])
+    A.rec = {}
     return flask.render_template(TEMPLATEFILE, CS=CS, CID=CID)
 
 @APP.route('/update/')
 def update():
     """
-    Returns a JSON object containing coords, weights, recommendations, axes
+    Returns a JSON object containing points, weights, recommendations, axes
     limits, point URLS and any other information. Handled by the update()
     function in the client.
     """
     prefix = 'https://imgur.com/gallery/'
     return flask.jsonify(points=[list(x) for x in A.proj],
                             urls=[prefix+p.id for p in P.items],
-                            weights=[len(p.comments) for p in P.items],
+                            weights=[2*np.sqrt(len(p.comments)) for p in P.items],
                             axesmin=list(np.min(A.proj, axis=0)[:A.axes]),
                             axesmax=list(np.max(A.proj, axis=0)[:A.axes]),
+                            choices = A.choices,
                             **A.rec
                         )
 
