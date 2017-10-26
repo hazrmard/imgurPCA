@@ -1,7 +1,9 @@
 ### CHANGELOG for v2.3.0
 
 * Ported to Python 3.
-* Added Feed-Forward Neural Network.
+* Bugfixes in `Parser.consolidate()` and `Parser.get()`.
+* Bugfixes in `macros.gen_axes` function.
+* Re-wrote `examples\\echochamber.py` from scratch.
 
 ### CHANGELOG for v2.2.1
 

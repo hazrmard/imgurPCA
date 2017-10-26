@@ -5,13 +5,15 @@
     <script src="https://rawgit.com/jasondavies/d3-cloud/master/build/d3.layout.cloud.js"></script>
     <style> /* set cosmetic properties */
         .link { 
-            stroke: black;
-            stroke-width: 2;
+            stroke: #fa0404;
+            stroke-width: 1;
             fill: none;
         }
         .centroid {
-            fill-opacity: 0.8;
+            fill: none;
             stroke: #fa0404;
+        }
+        .pulse {
             animation: pulsate 2s ease-out 0s infinite;
         }
         .point {
@@ -74,7 +76,7 @@
                 stroke-opacity: 1;
             }
             to {
-                stroke-width: 20;
+                stroke-width: 10;
                 stroke-opacity: 0;
             }
         }
@@ -238,7 +240,8 @@
             .data([data.centroid])
           .enter().append("circle")
             .classed("centroid", true)
-            .attr("r", "30px")
+            .classed("pulse", true)
+            .attr("r", "10px")
             .attr("fill", cScale(0))
             .attr("cx", function(d) {return xScale(d[0])})
             .attr("cy", function(d) {return yScale(d[1])});
@@ -247,6 +250,8 @@
             .transition().duration(timeout)
             .attr("cx", function(d) {return xScale(d[0])})
             .attr("cy", function(d) {return yScale(d[1])});
+        graph.selectAll(".centroid")
+            .data([data.centroid]).exit().remove()
         graph.selectAll(".link").data(data.choices)
           .enter().append("line")
             .classed("link", true)
@@ -260,6 +265,7 @@
             .attr("x2", function(d) {return xScale(data.centroid[0])})
             .attr("y1", function(d) {return yScale(data.points[d][1])})
             .attr("y2", function(d) {return yScale(data.centroid[1])});
+        graph.selectAll(".link").data(data.choices).exit().remove();
     }
 
     function wordCloud(data) {
