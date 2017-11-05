@@ -78,8 +78,9 @@ class BaseLearner(object):
         if isinstance(self.source, Molecular):
             if self.source._consolidated:
                 self._custom_words = None           # default to using source words
-                counts = np.vstack((item.wordcount['weight'] for item in self.source.items)).T
-                cov = np.cov(counts)
+                counts = np.vstack((item.wordcount['weight'] for item in self.source.items))
+                counts = counts - np.mean(counts, axis=0)
+                cov = np.cov(counts.T)
                 eiw, eiv = np.linalg.eigh(cov)       # eiw=e-vals, eiv=e-vectors
                 # Note .eig returns complex due to floating point precision errors
                 order = eiw.argsort()[::-1]

@@ -212,16 +212,16 @@
         
         // add mouse interactivity
         // show post page in sidebar iframe on mouseover
-        // graph.selectAll(".point")
-        //     .on("mouseover", function (d, i) {
-        //         if (src != data.urls[i]) {
-        //             src = data.urls[i];
-        //             d3.request("/get/?url=" + data.urls[i], function(res) {
-        //                 document.getElementById("iframe").contentWindow.document.write(res.responseText);
-        //                 document.getElementById("iframe").contentWindow.document.close();
-        //             });
-        //         }
-        //     });
+        graph.selectAll(".point")
+            .on("mouseover", function (d, i) {
+                if (src != data.urls[i]) {
+                    src = data.urls[i];
+                    d3.request("/get/?url=" + data.urls[i], function(res) {
+                        document.getElementById("iframe").contentWindow.document.write(res.responseText);
+                        document.getElementById("iframe").contentWindow.document.close();
+                    });
+                }
+            });
         
         // clicking adds post to choices and refreshes recommendations
         graph.selectAll(".point")
@@ -236,15 +236,20 @@
 
     // Illustrates the centroid recommendation scheme by plotting a centroid
     function recCentroid(data) {
-        graph.selectAll(".centroid")
-            .data([data.centroid])
-          .enter().append("circle")
-            .classed("centroid", true)
-            .classed("pulse", true)
-            .attr("r", "10px")
-            .attr("fill", cScale(0))
-            .attr("cx", function(d) {return xScale(d[0])})
-            .attr("cy", function(d) {return yScale(d[1])});
+        if (data.centroid == undefined) {
+            graph.selectAll(".centroid").remove()
+        } else if (data.centroid != undefined) {
+            console.log("HELLO " + data.centroid);
+            graph.selectAll(".centroid")
+                .data([data.centroid])
+              .enter().append("circle")
+                .classed("centroid", true)
+                .classed("pulse", true)
+                .attr("r", "10px")
+                .attr("fill", cScale(0))
+                .attr("cx", function(d) {return xScale(d[0])})
+                .attr("cy", function(d) {return yScale(d[1])});
+        }
         graph.selectAll(".centroid")
             .data([data.centroid])
             .transition().duration(timeout)

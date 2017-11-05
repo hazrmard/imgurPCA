@@ -9,7 +9,8 @@ from .. import Learner
 
 
 def gen_axes(cs, cid, output=None, remove=[], pages=(0,3), n=150, axes=2, topn=50,
-             verbose=False, query=None):
+             verbose=False, query=None, child_comments=False, comment_votes=True,
+             comment_level=True):
     """
     Generate axes from comments on posts on imgur. Saves to .csv file which can
     be leaded by Learner class.
@@ -38,7 +39,7 @@ def gen_axes(cs, cid, output=None, remove=[], pages=(0,3), n=150, axes=2, topn=5
 
     # For each post, tabulate word frequencies and normalize
     for post in p.items:                    # get word counts for each post
-        post.generate_word_counts()
+        post.generate_word_counts(child_comments, comment_votes, comment_level)
         post.filter_by_word(remove, reverse=True)
         post.normalize()
 

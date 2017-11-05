@@ -31,6 +31,9 @@ class Parser(Molecular):
                 pkg.download()
             except ImgurClientRateLimitError:
                 print('Rate limit exceeded. Download unfinished.', file=sys.stderr)
+            except KeyError:
+                print("imgurpython library couldn't access children", file=sys.stderr)
+
 
 
     def __init__(self, nthreads=8, *args, **kwargs):

@@ -46,6 +46,7 @@ import matplotlib.pyplot as plt
 import flask
 import requests
 
+import imgurpca
 from imgurpca import Query
 from imgurpca import Parser
 from imgurpca import Learner
@@ -75,7 +76,7 @@ learner = Learner()
 ARGS = ArgumentParser(description='Echochamber demo.')
 ARGS.add_argument('-l', '--load', default=None, type=str, metavar='L.csv',
                   help='Name of .csv file to load axes from. By default generates axes to: ' + AXES_FILE)
-ARGS.add_argument('-s', '--save', default=None, type=str, metavar='S.csv',
+ARGS.add_argument('-s', '--save', default=AXES_FILE, type=str, metavar='S.csv',
                   help='Name of .csv file to write axes to. Default:' + AXES_FILE)
 ARGS.add_argument('-a', '--axes', default=NUM_AXES, type=int, metavar='A',
                   help='Number of axes to generate.')
@@ -93,7 +94,7 @@ ARGS.add_argument('-f', '--filter', default=None, type=str, metavar='F.txt',
                   help='Path to newline delimted file containing words to filter out.')
 ARGS.add_argument('-d', '--demo', default=False, action='store_true',
                   help='Demo flag. Loads cached posts to project. Default: False')
-ARGS.add_argument('-c', '--cache', default=PICKLEFILE, nargs=1, type=str, metavar='C.pickle',
+ARGS.add_argument('-c', '--cache', default=PICKLEFILE, type=str, metavar='C.pickle',
                   help='Cached posts file to save/load for demo. Default: ' + PICKLEFILE)
 ARGS.add_argument('--rscheme', default=DEFAULT_REC, nargs=1, type=str, metavar='REC',
                   help='Recommendation scheme to use for choices. Default: ' + DEFAULT_REC)
@@ -165,10 +166,14 @@ if credits['UserRemaining']==0 and (A.load is None or not A.demo):
 if A.load is not None:
     L.load_axes(A.load)
     L.axes = L.axes[:, :A.axes]
-else:  
+else:
+    def word_weight(votes, points, nest):
+        return points / votes
+    imgurpca.base.config.DEFAULT_WORD_WEIGHT = word_weight
     gen_axes(output=A.save, remove=F, n=A.points,
                 pages=(0, A.points // POSTS_PER_PAGE + 1), topn=A.words,
-                verbose=True, query=A.query, axes=A.axes, cs=CS, cid=CID)
+                verbose=True, query=A.query, axes=A.axes, cs=CS, cid=CID,
+                child_comments=True, comment_votes=True)
     L.load_axes(A.save)
 
 # exit after generating axes if axes-only flag is specified
@@ -242,7 +247,7 @@ def axes():
     Posts are reprojected each time.
     """
     ax = []
-    A.choices = []
+    # A.choices = []
     ax.append(flask.request.args.get('xaxis', default=ORIGINAL_AX[0]))
     ax.append(flask.request.args.get('yaxis', default=ORIGINAL_AX[1]))
     formatted_axes = []
@@ -328,4 +333,4 @@ def words():
                          domain=[mi, ma])
 
 
-APP.run(debug=1)
+APP.run(debug=1, use_reloader=False, use_evalex=False)

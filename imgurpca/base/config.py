@@ -8,7 +8,7 @@ DT_WORD = np.dtype([(str('word'), str('U') + str(MAX_WORD_LENGTH))])
 DT_WEIGHT = np.dtype([(str('weight'), float)])
 DT_WORD_WEIGHT = np.dtype(DT_WORD.descr + DT_WEIGHT.descr)
 
-def DEFAULT_WORD_WEIGHT(post, comment, level): return 1    # equal weight
+def DEFAULT_WORD_WEIGHT(*args): return 1    # equal weight
 DEFAULT_SORT_ORDER = str('word')
 
 class InvalidArgument(Exception):
